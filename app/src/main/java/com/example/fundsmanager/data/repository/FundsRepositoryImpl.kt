@@ -81,6 +81,26 @@ class FundsRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateProjectSchedule(id: Long, startAt: Long, completedAt: Long?) {
+        database.withTransaction {
+            val old = projectDao.getProjectById(id) ?: return@withTransaction
+            val updated = old.copy(
+                startAt = startAt,
+                completedAt = completedAt,
+                updatedAt = System.currentTimeMillis()
+            )
+            projectDao.updateProject(updated)
+            insertAuditLog(
+                userId = old.userId,
+                entityType = ENTITY_PROJECT,
+                entityId = id,
+                action = ACTION_UPDATE,
+                oldValueJson = old.toAuditJson(),
+                newValueJson = updated.toAuditJson()
+            )
+        }
+    }
+
     override suspend fun setProjectArchived(id: Long, isArchived: Boolean) {
         database.withTransaction {
             val old = projectDao.getProjectById(id)
@@ -232,6 +252,30 @@ class FundsRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getCategoryById(id: Long): Category? {
+        return categoryDao.getCategoryById(id)?.toDomain()
+    }
+
+    override suspend fun insertCategory(category: Category): Long {
+        return categoryDao.insertCategory(category.toEntity())
+    }
+
+    override suspend fun updateCategory(category: Category) {
+        categoryDao.getCategoryById(category.id)?.let { existing ->
+            categoryDao.updateCategory(
+                existing.copy(
+                    name = category.name.trim(),
+                    description = category.description,
+                    updatedAt = System.currentTimeMillis()
+                )
+            )
+        }
+    }
+
+    override suspend fun softDeleteCategory(id: Long) {
+        categoryDao.softDeleteCategory(id)
+    }
+
     override fun getAttachmentsByTransaction(transactionId: Long): Flow<List<Attachment>> {
         return attachmentDao.getAttachmentsByTransaction(transactionId).map { list ->
             list.map { it.toDomain() }
@@ -274,7 +318,7 @@ class FundsRepositoryImpl @Inject constructor(
     }
 
     private fun ProjectEntity.toAuditJson(): String {
-        return """{"id":$id,"userId":$userId,"name":"${name.escapeJson()}","isArchived":$isArchived,"deletedAt":${deletedAt ?: "null"}}"""
+        return """{"id":$id,"userId":$userId,"name":"${name.escapeJson()}","isArchived":$isArchived,"startAt":$startAt,"completedAt":${completedAt ?: "null"},"deletedAt":${deletedAt ?: "null"}}"""
     }
 
     private fun Transaction.toAuditJson(): String {

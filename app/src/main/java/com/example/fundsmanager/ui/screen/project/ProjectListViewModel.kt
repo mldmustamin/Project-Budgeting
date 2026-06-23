@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.format.DateTimeParseException
 import javax.inject.Inject
 
 data class ProjectListItem(
@@ -46,24 +48,40 @@ class ProjectListViewModel @Inject constructor(
         observeProjects()
     }
 
-    fun addProject(name: String, userId: Long = 1L) {
+    fun addProject(name: String, startDate: String?, completedDate: String?, userId: Long = 1L) {
         viewModelScope.launch {
             try {
                 _uiState.update { it.copy(error = null) }
+                val startAt = parseDateOrNull(startDate) ?: System.currentTimeMillis()
+                val completedAt = parseDateOrNull(completedDate)
+                if (completedAt != null && completedAt < startAt) {
+                    _uiState.update { it.copy(error = "Tanggal selesai tidak boleh lebih awal dari tanggal mulai") }
+                    return@launch
+                }
                 appLogger.info(
                     category = AppLogCategory.PROJECT,
                     screen = "ProjectList",
                     action = "create_project_clicked",
                     message = "Create project requested",
-                    details = "name=${name.take(80)}"
+                    details = "name=${name.take(80)} startAt=$startAt completedAt=${completedAt ?: "-"}"
                 )
-                val projectId = repository.insertProject(userId, Project(0, name.trim(), null, false))
+                val projectId = repository.insertProject(
+                    userId,
+                    Project(
+                        id = 0,
+                        name = name.trim(),
+                        description = null,
+                        isArchived = false,
+                        startAt = startAt,
+                        completedAt = completedAt
+                    )
+                )
                 appLogger.info(
                     category = AppLogCategory.PROJECT,
                     screen = "ProjectList",
                     action = "create_project_success",
                     message = "Project created",
-                    details = "projectId=$projectId name=${name.take(80)}"
+                    details = "projectId=$projectId name=${name.take(80)} startAt=$startAt completedAt=${completedAt ?: "-"}"
                 )
             } catch (e: Exception) {
                 appLogger.error(
@@ -76,6 +94,16 @@ class ProjectListViewModel @Inject constructor(
                 )
                 _uiState.update { it.copy(error = e.message ?: "Gagal membuat project") }
             }
+        }
+    }
+
+    private fun parseDateOrNull(value: String?): Long? {
+        val text = value?.trim().orEmpty()
+        if (text.isBlank()) return null
+        return try {
+            LocalDate.parse(text).toEpochDay() * 86_400_000L
+        } catch (_: DateTimeParseException) {
+            null
         }
     }
 
@@ -108,6 +136,31 @@ class ProjectListViewModel @Inject constructor(
         }
     }
 
+    fun deleteProject(projectId: Long) {
+        viewModelScope.launch {
+            try {
+                repository.softDeleteProject(projectId)
+                appLogger.info(
+                    category = AppLogCategory.PROJECT,
+                    screen = "ProjectList",
+                    action = "delete_project_success",
+                    message = "Project deleted",
+                    details = "projectId=$projectId"
+                )
+            } catch (e: Exception) {
+                appLogger.error(
+                    category = AppLogCategory.PROJECT,
+                    screen = "ProjectList",
+                    action = "delete_project_error",
+                    message = "Failed to delete project",
+                    throwable = e,
+                    details = "projectId=$projectId"
+                )
+                _uiState.update { it.copy(error = e.message ?: "Gagal menghapus project") }
+            }
+        }
+    }
+
     fun renameProject(projectId: Long, name: String) {
         viewModelScope.launch {
             try {
@@ -130,6 +183,42 @@ class ProjectListViewModel @Inject constructor(
                     details = "projectId=$projectId name=${name.take(80)}"
                 )
                 _uiState.update { it.copy(error = e.message ?: "Gagal mengganti nama project") }
+            }
+        }
+    }
+
+    fun updateProjectSchedule(projectId: Long, startDate: String, completedDate: String?) {
+        viewModelScope.launch {
+            try {
+                _uiState.update { it.copy(error = null) }
+                val startAt = parseDateOrNull(startDate)
+                if (startAt == null) {
+                    _uiState.update { it.copy(error = "Tanggal mulai wajib diisi") }
+                    return@launch
+                }
+                val completedAt = parseDateOrNull(completedDate)
+                if (completedAt != null && completedAt < startAt) {
+                    _uiState.update { it.copy(error = "Tanggal selesai tidak boleh lebih awal dari tanggal mulai") }
+                    return@launch
+                }
+                repository.updateProjectSchedule(projectId, startAt, completedAt)
+                appLogger.info(
+                    category = AppLogCategory.PROJECT,
+                    screen = "ProjectList",
+                    action = "update_project_schedule_success",
+                    message = "Project schedule updated",
+                    details = "projectId=$projectId startAt=$startAt completedAt=${completedAt ?: "-"}"
+                )
+            } catch (e: Exception) {
+                appLogger.error(
+                    category = AppLogCategory.PROJECT,
+                    screen = "ProjectList",
+                    action = "update_project_schedule_error",
+                    message = "Failed to update project schedule",
+                    throwable = e,
+                    details = "projectId=$projectId startDate=$startDate completedDate=${completedDate ?: "-"}"
+                )
+                _uiState.update { it.copy(error = e.message ?: "Gagal memperbarui tanggal project") }
             }
         }
     }

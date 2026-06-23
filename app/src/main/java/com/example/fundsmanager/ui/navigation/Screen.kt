@@ -3,7 +3,8 @@ package com.example.fundsmanager.ui.navigation
 sealed class Screen(val route: String) {
     object ProjectList : Screen("project_list")
     object GlobalTransactionList : Screen("transaction_home")
-    object ReportHome : Screen("report_home")
+    object Dashboard : Screen("dashboard")
+    object CategoryManager : Screen("category_manager")
     object ProjectDashboard : Screen("project_dashboard/{projectId}") {
         fun createRoute(projectId: Long) = "project_dashboard/$projectId"
     }
@@ -14,6 +15,5 @@ sealed class Screen(val route: String) {
         fun createRoute(projectId: Long, transactionId: Long? = null) = 
             "transaction_form/$projectId" + (transactionId?.let { "?transactionId=$it" } ?: "")
     }
-    object ImportPreview : Screen("import_preview")
     object Settings : Screen("settings")
 }

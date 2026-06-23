@@ -36,6 +36,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
@@ -68,6 +69,8 @@ import com.example.fundsmanager.ui.component.AppDropdownField
 import com.example.fundsmanager.ui.component.MoneyInputField
 import com.example.fundsmanager.ui.component.PrimaryButton
 import com.example.fundsmanager.ui.component.ProofSourceDialog
+import com.example.fundsmanager.ui.screen.home.HomeBottomBar
+import com.example.fundsmanager.ui.screen.home.HomeMenu
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.time.Instant
@@ -79,6 +82,10 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun TransactionFormScreen(
     onBackClick: () -> Unit,
+    onDashboardClick: () -> Unit,
+    onProjectClick: (Long) -> Unit,
+    onTransactionMenuClick: () -> Unit,
+    onSettingClick: () -> Unit,
     viewModel: TransactionFormViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -166,6 +173,19 @@ fun TransactionFormScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
+        },
+        bottomBar = {
+            HomeBottomBar(
+                selected = HomeMenu.Transactions,
+                onDashboardClick = onDashboardClick,
+                onProjectClick = {
+                    if (uiState.projectId > 0L) {
+                        onProjectClick(uiState.projectId)
+                    }
+                },
+                onTransactionClick = onTransactionMenuClick,
+                onSettingClick = onSettingClick
+            )
         }
     ) { innerPadding ->
         if (uiState.isLoading) {
@@ -184,10 +204,22 @@ fun TransactionFormScreen(
                     .padding(horizontal = 20.dp, vertical = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                TransactionTypeDropdown(
-                    selectedType = uiState.type,
-                    onTypeSelected = viewModel::onTypeChange
+                TransactionFlowDropdown(
+                    selectedFlow = uiState.flowType,
+                    onFlowSelected = viewModel::onFlowTypeChange
                 )
+
+                if (uiState.flowType == TransactionFlowType.INCOME) {
+                    FixedSubtypeCard(
+                        label = "Jenis Pemasukan",
+                        value = "Transfer Dana"
+                    )
+                } else {
+                    ExpenseSubtypeDropdown(
+                        selectedSubtype = uiState.expenseSubtype,
+                        onSubtypeSelected = viewModel::onExpenseSubtypeChange
+                    )
+                }
 
                 DatePickerField(
                     label = "Tanggal",
@@ -221,7 +253,7 @@ fun TransactionFormScreen(
                     MoneyInputField(
                         value = uiState.reportedAmount,
                         onValueChange = viewModel::onReportedAmountChange,
-                        label = if (uiState.type.isIncome()) "Nominal Dana Masuk" else "Nominal Expense",
+                        label = if (uiState.flowType == TransactionFlowType.INCOME) "Nominal Transfer Dana" else "Nominal Pengeluaran",
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -232,11 +264,13 @@ fun TransactionFormScreen(
                     onAccountSelected = viewModel::onAccountChange
                 )
 
-                CategoryDropdown(
-                    categories = uiState.categories,
-                    selectedCategoryId = uiState.selectedCategoryId,
-                    onCategorySelected = viewModel::onCategoryChange
-                )
+                if (uiState.flowType == TransactionFlowType.EXPENSE) {
+                    CategoryDropdown(
+                        categories = uiState.categories,
+                        selectedCategoryId = uiState.selectedCategoryId,
+                        onCategorySelected = viewModel::onCategoryChange
+                    )
+                }
 
                 LabeledTextField(
                     label = "Catatan (Opsional)",
@@ -432,30 +466,105 @@ private fun DatePickerField(
 }
 
 @Composable
-private fun TransactionTypeDropdown(
-    selectedType: TransactionType,
-    onTypeSelected: (TransactionType) -> Unit
+private fun TransactionFlowDropdown(
+    selectedFlow: TransactionFlowType,
+    onFlowSelected: (TransactionFlowType) -> Unit
 ) {
     AppDropdownField(
         label = "Jenis Transaksi",
-        selectedLabel = selectedType.toUiLabel(),
-        options = TransactionType.entries,
-        optionLabel = { it.toUiLabel() },
-        onSelected = onTypeSelected,
-        leadingIcon = { TypeIcon(selectedType) },
+        selectedLabel = when (selectedFlow) {
+            TransactionFlowType.INCOME -> "Pemasukan"
+            TransactionFlowType.EXPENSE -> "Pengeluaran"
+        },
+        options = TransactionFlowType.entries,
+        optionLabel = {
+            when (it) {
+                TransactionFlowType.INCOME -> "Pemasukan"
+                TransactionFlowType.EXPENSE -> "Pengeluaran"
+            }
+        },
+        onSelected = onFlowSelected,
+        leadingIcon = { FlowIcon(selectedFlow) },
         modifier = Modifier.fillMaxWidth()
     )
 }
 
 @Composable
-private fun TypeIcon(type: TransactionType) {
-    val tint = when {
-        type.isIncome() -> Color(0xFF18A13A)
-        type.requiresRealAmountInput() -> MaterialTheme.colorScheme.error
-        else -> Color(0xFF7C3AED)
+private fun FlowIcon(flowType: TransactionFlowType) {
+    val tint = when (flowType) {
+        TransactionFlowType.INCOME -> Color(0xFF18A13A)
+        TransactionFlowType.EXPENSE -> MaterialTheme.colorScheme.error
     }
     Box(modifier = Modifier.size(28.dp).background(tint.copy(alpha = 0.13f), RoundedCornerShape(7.dp)), contentAlignment = Alignment.Center) {
         Icon(Icons.Default.Payments, contentDescription = null, tint = tint, modifier = Modifier.size(18.dp))
+    }
+}
+
+@Composable
+private fun ExpenseSubtypeDropdown(
+    selectedSubtype: ExpenseSubtype,
+    onSubtypeSelected: (ExpenseSubtype) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            "Jenis Pengeluaran",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            ExpenseSubtypeOption(
+                title = "Pekerjaan",
+                icon = Icons.Default.BusinessCenter,
+                selected = selectedSubtype == ExpenseSubtype.WORK,
+                onClick = { onSubtypeSelected(ExpenseSubtype.WORK) },
+                modifier = Modifier.weight(1f)
+            )
+            ExpenseSubtypeOption(
+                title = "Pribadi",
+                icon = Icons.Default.Payments,
+                selected = selectedSubtype == ExpenseSubtype.PERSONAL,
+                onClick = { onSubtypeSelected(ExpenseSubtype.PERSONAL) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun FixedSubtypeCard(
+    label: String,
+    value: String
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(label, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 15.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    FlowIcon(TransactionFlowType.INCOME)
+                    Text(value, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.bodyMedium)
+                }
+                Text(
+                    "Tetap",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
     }
 }
 
@@ -501,5 +610,54 @@ private fun CategoryDropdown(
 private fun SmallBlueIcon(icon: androidx.compose.ui.graphics.vector.ImageVector) {
     Box(modifier = Modifier.size(28.dp).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f), RoundedCornerShape(7.dp)), contentAlignment = Alignment.Center) {
         Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(17.dp))
+    }
+}
+
+@Composable
+private fun ExpenseSubtypeOption(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .background(
+                        if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else MaterialTheme.colorScheme.surfaceVariant,
+                        RoundedCornerShape(8.dp)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
+            Text(
+                text = title,
+                color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }

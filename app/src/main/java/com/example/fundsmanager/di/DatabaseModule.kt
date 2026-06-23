@@ -37,7 +37,7 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "funds_manager_db"
-        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
             .addCallback(object : RoomDatabase.Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
@@ -95,6 +95,13 @@ object DatabaseModule {
         }
     }
 
+    private val MIGRATION_5_6 = object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE projects ADD COLUMN startAt INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE projects ADD COLUMN completedAt INTEGER")
+        }
+    }
+
     private fun seedDatabase(db: SupportSQLiteDatabase) {
         val now = System.currentTimeMillis()
 
@@ -116,7 +123,14 @@ object DatabaseModule {
 
         // Seed Categories
         val defaultCategories = listOf(
-            "Makan & Minum", "Transportasi", "Penginapan", "Alat Tulis Kantor", "Lain-lain"
+            "Transfer Dana",
+            "Pengeluaran Pekerjaan",
+            "Pengeluaran Pribadi",
+            "Makan & Minum",
+            "Transportasi",
+            "Penginapan",
+            "Alat Tulis Kantor",
+            "Lain-lain"
         )
         defaultCategories.forEach { name ->
             db.execSQL(

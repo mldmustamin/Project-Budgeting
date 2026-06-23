@@ -47,6 +47,7 @@ class TransactionFormViewModel @Inject constructor(
     val uiState: StateFlow<TransactionFormUiState> = _uiState.asStateFlow()
 
     init {
+        _uiState.update { it.copy(projectId = projectId) }
         appLogger.info(
             category = AppLogCategory.TRANSACTION,
             screen = "FormTransaksi",
@@ -63,13 +64,15 @@ class TransactionFormViewModel @Inject constructor(
             
             val accounts = repository.getAllAccounts().first()
             val categories = repository.getAllCategories().first()
+            val defaultType = TransactionType.FUND_IN
             
             _uiState.update { 
                 it.copy(
                     accounts = accounts,
                     categories = categories,
                     date = LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE),
-                    selectedAccountId = accounts.firstOrNull()?.id
+                    selectedAccountId = accounts.firstOrNull()?.id,
+                    selectedCategoryId = categories.defaultCategoryIdFor(defaultType)
                 )
             }
 
@@ -78,6 +81,8 @@ class TransactionFormViewModel @Inject constructor(
                     _uiState.update { 
                         it.copy(
                             type = tx.type,
+                            flowType = if (tx.type == TransactionType.FUND_IN) TransactionFlowType.INCOME else TransactionFlowType.EXPENSE,
+                            expenseSubtype = if (tx.type == TransactionType.PERSONAL_EXPENSE) ExpenseSubtype.PERSONAL else ExpenseSubtype.WORK,
                             date = tx.date,
                             description = tx.description,
                             reportedAmount = tx.reportedAmount.toString(),
@@ -134,12 +139,40 @@ class TransactionFormViewModel @Inject constructor(
 
     private data class PendingAttachment(val path: String, val name: String)
 
-    fun onTypeChange(type: TransactionType) {
+    fun onFlowTypeChange(flowType: TransactionFlowType) {
         _uiState.update { state ->
-            val newState = state.copy(type = type, error = null, duplicateWarning = null)
-            if (!type.requiresRealAmountInput()) {
-                newState.copy(realAmount = state.reportedAmount)
-            } else newState
+            val type = when (flowType) {
+                TransactionFlowType.INCOME -> TransactionType.FUND_IN
+                TransactionFlowType.EXPENSE -> when (state.expenseSubtype) {
+                    ExpenseSubtype.WORK -> TransactionType.OFFICE_EXPENSE
+                    ExpenseSubtype.PERSONAL -> TransactionType.PERSONAL_EXPENSE
+                }
+            }
+            val newState = state.copy(
+                flowType = flowType,
+                type = type,
+                selectedCategoryId = state.categories.defaultCategoryIdFor(type),
+                error = null,
+                duplicateWarning = null
+            )
+            if (!type.requiresRealAmountInput()) newState.copy(realAmount = state.reportedAmount) else newState
+        }
+    }
+
+    fun onExpenseSubtypeChange(expenseSubtype: ExpenseSubtype) {
+        _uiState.update { state ->
+            val type = when (expenseSubtype) {
+                ExpenseSubtype.WORK -> TransactionType.OFFICE_EXPENSE
+                ExpenseSubtype.PERSONAL -> TransactionType.PERSONAL_EXPENSE
+            }
+            val newState = state.copy(
+                expenseSubtype = expenseSubtype,
+                type = type,
+                selectedCategoryId = state.categories.defaultCategoryIdFor(type),
+                error = null,
+                duplicateWarning = null
+            )
+            if (!type.requiresRealAmountInput()) newState.copy(realAmount = state.reportedAmount) else newState
         }
     }
 
@@ -283,5 +316,14 @@ class TransactionFormViewModel @Inject constructor(
 
     private fun Transaction.validationDetails(): String {
         return "transactionId=$id projectId=$projectId accountId=${accountId ?: "null"} categoryId=${categoryId ?: "null"} type=$type date=$date reportedAmount=$reportedAmount realAmount=$realAmount"
+    }
+
+    private fun List<com.example.fundsmanager.domain.model.Category>.defaultCategoryIdFor(type: TransactionType): Long? {
+        val targetName = when (type) {
+            TransactionType.FUND_IN -> "Transfer Dana"
+            TransactionType.OFFICE_EXPENSE -> "Pengeluaran Pekerjaan"
+            TransactionType.PERSONAL_EXPENSE -> "Pengeluaran Pribadi"
+        }
+        return firstOrNull { it.name.equals(targetName, ignoreCase = true) }?.id
     }
 }

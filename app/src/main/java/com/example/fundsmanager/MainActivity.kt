@@ -5,8 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
@@ -31,13 +29,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             FundsManagerTheme {
                 val navController = rememberNavController()
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    FundsManagerNavHost(
-                        navController = navController,
-                        appLogger = appLogger,
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
+                FundsManagerNavHost(
+                    navController = navController,
+                    appLogger = appLogger,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
     }

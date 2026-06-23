@@ -2,14 +2,13 @@
 
 ## Ringkasan
 
-Funds Manager adalah aplikasi Android offline-first untuk mencatat dana project dan perjalanan dinas. Fokus utamanya adalah pengelolaan project, dana masuk, expense kantor, expense pribadi, bukti transaksi, import backup JSON, dan export laporan.
+Funds Manager adalah aplikasi Android offline-first untuk mencatat dana project dan perjalanan dinas. Fokus utamanya adalah pengelolaan project, dana masuk, expense kantor, expense pribadi, bukti transaksi, dan export laporan.
 
 ## Tujuan Produk
 
 - Memudahkan pencatatan keuangan lapangan tanpa backend cloud.
 - Menyediakan ringkasan dana project yang cepat dibaca.
 - Menjaga data tetap rapi lewat akun, kategori, bukti transaksi, dan soft delete.
-- Mendukung alur impor data legacy dari `tracker-duit`.
 
 ## Fitur Inti
 
@@ -20,7 +19,6 @@ Funds Manager adalah aplikasi Android offline-first untuk mencatat dana project 
   - expense kantor,
   - expense pribadi.
 - Daftar transaksi dengan pencarian, filter tipe, filter bukti, edit, dan soft delete.
-- Import preview untuk JSON `tracker-duit`.
 - Export laporan per project ke PDF, Excel, dan CSV.
 - Lampiran bukti dari kamera atau galeri.
 
@@ -39,7 +37,6 @@ Funds Manager adalah aplikasi Android offline-first untuk mencatat dana project 
 - `project_dashboard/{projectId}`
 - `transaction_form/{projectId}?transactionId={transactionId}`
 - `transaction_list/{projectId}`
-- `import_preview`
 - `transaction_home`
 - `report_home`
 - `settings`
@@ -88,7 +85,5 @@ app/build/outputs/apk/debug/app-debug.apk
 
 - Start destination aplikasi adalah `project_list`.
 - Dashboard memuat `ProjectSummary` dan transaksi terbaru.
-- Import JSON menggunakan preview sebelum commit data.
 - Export laporan dibuat dari data project yang sudah dihitung di domain layer.
 - `settings` route sudah ada di navigation, tetapi screen-nya belum terhubung.
-

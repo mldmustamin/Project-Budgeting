@@ -9,6 +9,8 @@ import com.example.fundsmanager.domain.model.TransactionType
 import com.example.fundsmanager.domain.repository.FundsRepository
 import com.example.fundsmanager.domain.service.FileStorageService
 import com.example.fundsmanager.domain.usecase.GetProjectLedgerUseCase
+import com.example.fundsmanager.util.logging.AppLogCategory
+import com.example.fundsmanager.util.logging.AppLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,7 +42,8 @@ data class GlobalTransactionUiState(
 class GlobalTransactionViewModel @Inject constructor(
     private val repository: FundsRepository,
     private val fileStorageService: FileStorageService,
-    private val getProjectLedgerUseCase: GetProjectLedgerUseCase
+    private val getProjectLedgerUseCase: GetProjectLedgerUseCase,
+    private val appLogger: AppLogger
 ) : ViewModel() {
     private var allItems: List<GlobalTransactionItem> = emptyList()
 
@@ -48,6 +51,10 @@ class GlobalTransactionViewModel @Inject constructor(
     val uiState: StateFlow<GlobalTransactionUiState> = _uiState.asStateFlow()
 
     init { load() }
+
+    fun refreshData() {
+        load()
+    }
 
     fun onSearchQueryChange(query: String) {
         _uiState.update { it.copy(searchQuery = query) }
@@ -61,6 +68,33 @@ class GlobalTransactionViewModel @Inject constructor(
 
     fun clearMessage() {
         _uiState.update { it.copy(message = null) }
+    }
+
+    fun deleteTransaction(transactionId: Long) {
+        viewModelScope.launch {
+            try {
+                repository.softDeleteTransaction(transactionId)
+                appLogger.info(
+                    category = AppLogCategory.TRANSACTION,
+                    screen = "TransaksiGlobal",
+                    action = "delete_transaction_success",
+                    message = "Transaction deleted",
+                    details = "transactionId=$transactionId"
+                )
+                load()
+                _uiState.update { it.copy(message = "Transaksi berhasil dihapus") }
+            } catch (e: Exception) {
+                appLogger.error(
+                    category = AppLogCategory.TRANSACTION,
+                    screen = "TransaksiGlobal",
+                    action = "delete_transaction_error",
+                    message = "Failed to delete transaction",
+                    throwable = e,
+                    details = "transactionId=$transactionId"
+                )
+                _uiState.update { it.copy(message = e.message ?: "Gagal menghapus transaksi") }
+            }
+        }
     }
 
     fun saveProof(transactionId: Long, inputStream: InputStream, fileName: String) {

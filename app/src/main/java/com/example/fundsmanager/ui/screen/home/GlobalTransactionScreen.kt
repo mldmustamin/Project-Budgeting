@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -25,11 +26,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.BusinessCenter
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -46,6 +49,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,13 +63,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.example.fundsmanager.domain.model.TransactionType
 import com.example.fundsmanager.domain.model.isIncome
 import com.example.fundsmanager.domain.model.toUiLabel
 import com.example.fundsmanager.ui.component.EmptyState
 import com.example.fundsmanager.ui.component.PrimaryButton
 import com.example.fundsmanager.ui.component.ProofSourceDialog
+import com.example.fundsmanager.ui.component.DeleteConfirmationDialog
 import com.example.fundsmanager.ui.component.ReceiptBadge
 import com.example.fundsmanager.ui.component.TypeBadge
 import com.example.fundsmanager.ui.component.formatRupiah
@@ -75,15 +83,28 @@ import java.io.ByteArrayOutputStream
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GlobalTransactionScreen(
+    onDashboardClick: () -> Unit,
     onProjectMenuClick: () -> Unit,
-    onReportMenuClick: () -> Unit,
+    onSettingClick: () -> Unit,
     onAddTransactionClick: (Long) -> Unit,
     onEditTransaction: (Long, Long) -> Unit,
     viewModel: GlobalTransactionViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     var pendingProofTransactionId by remember { mutableStateOf<Long?>(null) }
+    var pendingDeleteTransactionId by remember { mutableStateOf<Long?>(null) }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.refreshData()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     val fileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         val transactionId = pendingProofTransactionId
@@ -118,6 +139,16 @@ fun GlobalTransactionScreen(
         }
     }
 
+    pendingDeleteTransactionId?.let { transactionId ->
+        DeleteConfirmationDialog(
+            onDismiss = { pendingDeleteTransactionId = null },
+            onConfirm = {
+                viewModel.deleteTransaction(transactionId)
+                pendingDeleteTransactionId = null
+            }
+        )
+    }
+
     pendingProofTransactionId?.let {
         ProofSourceDialog(
             onDismiss = { pendingProofTransactionId = null },
@@ -141,9 +172,10 @@ fun GlobalTransactionScreen(
         bottomBar = {
             HomeBottomBar(
                 selected = HomeMenu.Transactions,
+                onDashboardClick = onDashboardClick,
                 onProjectClick = onProjectMenuClick,
                 onTransactionClick = {},
-                onReportClick = onReportMenuClick
+                onSettingClick = onSettingClick
             )
         },
         floatingActionButton = {
@@ -197,11 +229,15 @@ fun GlobalTransactionScreen(
             }
 
             when {
-                uiState.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                uiState.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+
                 uiState.items.isEmpty() -> GlobalTransactionEmpty(
                     hasProject = uiState.projects.isNotEmpty(),
                     onAddClick = { uiState.projects.firstOrNull()?.id?.let(onAddTransactionClick) }
                 )
+
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = 92.dp),
@@ -211,7 +247,8 @@ fun GlobalTransactionScreen(
                         GlobalTransactionCard(
                             item = item,
                             onClick = { onEditTransaction(item.transaction.projectId, item.transaction.id) },
-                            onProofClick = { pendingProofTransactionId = item.transaction.id }
+                            onProofClick = { pendingProofTransactionId = item.transaction.id },
+                            onDeleteClick = { pendingDeleteTransactionId = item.transaction.id }
                         )
                     }
                 }
@@ -259,7 +296,8 @@ private fun CompactChip(selected: Boolean, label: String, onClick: () -> Unit) {
 private fun GlobalTransactionCard(
     item: GlobalTransactionItem,
     onClick: () -> Unit,
-    onProofClick: () -> Unit
+    onProofClick: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
     val transaction = item.transaction
     val amountColor = if (transaction.type.isIncome()) Color(0xFF18A13A) else MaterialTheme.colorScheme.error
@@ -291,31 +329,37 @@ private fun GlobalTransactionCard(
                         modifier = Modifier.clickable(onClick = onProofClick)
                     )
                 }
+                IconButton(onClick = onDeleteClick, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.DeleteOutline, contentDescription = "Hapus transaksi", tint = MaterialTheme.colorScheme.error)
+                }
             }
         }
     }
 }
 
-enum class HomeMenu { Projects, Transactions, Reports }
+enum class HomeMenu { Dashboard, Projects, Transactions, Setting }
 
 @Composable
 fun HomeBottomBar(
     selected: HomeMenu,
+    onDashboardClick: () -> Unit,
     onProjectClick: () -> Unit,
     onTransactionClick: () -> Unit,
-    onReportClick: () -> Unit
+    onSettingClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 26.dp, vertical = 9.dp),
+            .navigationBarsPadding()
+            .padding(horizontal = 18.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
+        HomeBottomItem(Icons.Default.BusinessCenter, "Dashboard", selected == HomeMenu.Dashboard, onDashboardClick)
         HomeBottomItem(Icons.Default.Folder, "Project", selected == HomeMenu.Projects, onProjectClick)
         HomeBottomItem(Icons.AutoMirrored.Filled.ReceiptLong, "Transaksi", selected == HomeMenu.Transactions, onTransactionClick)
-        HomeBottomItem(Icons.Default.Assessment, "Laporan", selected == HomeMenu.Reports, onReportClick)
+        HomeBottomItem(Icons.Default.Settings, "Setting", selected == HomeMenu.Setting, onSettingClick)
     }
 }
 
@@ -324,10 +368,10 @@ private fun HomeBottomItem(icon: ImageVector, label: String, selected: Boolean, 
     val color = if (selected) MaterialTheme.colorScheme.primary else Color(0xFF64748B)
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(3.dp),
-        modifier = Modifier.clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 4.dp)
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+        modifier = Modifier.clickable(onClick = onClick).padding(horizontal = 10.dp, vertical = 2.dp)
     ) {
-        Icon(icon, contentDescription = label, modifier = Modifier.size(20.dp), tint = color)
+        Icon(icon, contentDescription = label, modifier = Modifier.size(22.dp), tint = color)
         Text(label, style = MaterialTheme.typography.labelSmall, color = color, fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium)
     }
 }

@@ -2,9 +2,9 @@ package com.example.fundsmanager.domain.model
 
 fun TransactionType.toUiLabel(): String {
     return when (this) {
-        TransactionType.FUND_IN -> "Dana Masuk"
-        TransactionType.OFFICE_EXPENSE -> "Expense Kantor"
-        TransactionType.PERSONAL_EXPENSE -> "Expense Pribadi"
+        TransactionType.FUND_IN -> "Transfer Dana"
+        TransactionType.OFFICE_EXPENSE -> "Pengeluaran Pekerjaan"
+        TransactionType.PERSONAL_EXPENSE -> "Pengeluaran Pribadi"
     }
 }
 
@@ -21,5 +21,5 @@ fun TransactionType.isExpense(): Boolean {
 }
 
 fun defaultTransactionType(): TransactionType {
-    return TransactionType.OFFICE_EXPENSE
+    return TransactionType.FUND_IN
 }

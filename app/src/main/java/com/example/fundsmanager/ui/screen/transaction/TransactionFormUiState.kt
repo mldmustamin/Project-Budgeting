@@ -5,10 +5,23 @@ import com.example.fundsmanager.domain.model.Category
 import com.example.fundsmanager.domain.model.TransactionType
 import com.example.fundsmanager.domain.model.defaultTransactionType
 
+enum class TransactionFlowType {
+    INCOME,
+    EXPENSE
+}
+
+enum class ExpenseSubtype {
+    WORK,
+    PERSONAL
+}
+
 data class TransactionFormUiState(
     val isLoading: Boolean = false,
     val isEditMode: Boolean = false,
+    val projectId: Long = 0L,
     val type: TransactionType = defaultTransactionType(),
+    val flowType: TransactionFlowType = TransactionFlowType.INCOME,
+    val expenseSubtype: ExpenseSubtype = ExpenseSubtype.WORK,
     val date: String = "",
     val description: String = "",
     val reportedAmount: String = "",

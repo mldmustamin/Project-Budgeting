@@ -16,7 +16,12 @@ data class Project(
     val id: Long,
     val name: String,
     val description: String?,
-    val isArchived: Boolean
+    val isArchived: Boolean,
+    val startAt: Long = 0L,
+    val completedAt: Long? = null,
+    val createdAt: Long = 0L,
+    val updatedAt: Long = 0L,
+    val deletedAt: Long? = null
 )
 
 data class Account(

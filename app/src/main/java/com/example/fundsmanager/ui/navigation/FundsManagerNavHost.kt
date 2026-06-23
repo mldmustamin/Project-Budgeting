@@ -11,12 +11,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.navArgument
 import com.example.fundsmanager.ui.screen.dashboard.DashboardScreen
+import com.example.fundsmanager.ui.screen.home.DashboardHomeScreen
 import com.example.fundsmanager.ui.screen.home.GlobalTransactionScreen
-import com.example.fundsmanager.ui.screen.home.ReportHomeScreen
 import com.example.fundsmanager.ui.screen.project.ProjectListScreen
-import com.example.fundsmanager.ui.screen.transaction.TransactionFormScreen
+import com.example.fundsmanager.ui.screen.settings.CategoryManagementScreen
+import com.example.fundsmanager.ui.screen.settings.SettingsScreen
 import com.example.fundsmanager.ui.screen.transaction.TransactionListScreen
-import com.example.fundsmanager.ui.screen.importbackup.ImportPreviewScreen
+import com.example.fundsmanager.ui.screen.transaction.TransactionFormScreen
 import com.example.fundsmanager.util.logging.AppLogCategory
 import com.example.fundsmanager.util.logging.AppLogger
 
@@ -41,40 +42,94 @@ fun FundsManagerNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = Screen.ProjectList.route,
+        startDestination = Screen.Dashboard.route,
         modifier = modifier
     ) {
+        composable(Screen.Dashboard.route) {
+            DashboardHomeScreen(
+                onDashboardClick = {},
+                onProjectMenuClick = {
+                    navController.navigate(Screen.ProjectList.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onTransactionMenuClick = {
+                    navController.navigate(Screen.GlobalTransactionList.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onSettingClick = {
+                    navController.navigate(Screen.Settings.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onProjectClick = { projectId ->
+                    navController.navigate(Screen.ProjectDashboard.createRoute(projectId))
+                },
+                onOpenProjectList = {
+                    navController.navigate(Screen.ProjectList.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onOpenTransactionList = {
+                    navController.navigate(Screen.GlobalTransactionList.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onManageCategoriesClick = {
+                    navController.navigate(Screen.CategoryManager.route)
+                }
+            )
+        }
+
         composable(Screen.ProjectList.route) {
             ProjectListScreen(
+                onDashboardClick = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
                 onProjectClick = { projectId: Long ->
                     navController.navigate(Screen.ProjectDashboard.createRoute(projectId))
                 },
                 onTransactionsClick = {
                     navController.navigate(Screen.GlobalTransactionList.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
                         launchSingleTop = true
                     }
                 },
-                onReportsClick = {
-                    navController.navigate(Screen.ReportHome.route) {
+                onSettingClick = {
+                    navController.navigate(Screen.Settings.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
                         launchSingleTop = true
                     }
-                },
-                onImportClick = {
-                    navController.navigate(Screen.ImportPreview.route)
                 }
             )
         }
 
         composable(Screen.GlobalTransactionList.route) {
             GlobalTransactionScreen(
-                onProjectMenuClick = {
-                    navController.navigate(Screen.ProjectList.route) {
-                        popUpTo(Screen.ProjectList.route) { inclusive = false }
+                onDashboardClick = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
                         launchSingleTop = true
                     }
                 },
-                onReportMenuClick = {
-                    navController.navigate(Screen.ReportHome.route) {
+                onProjectMenuClick = {
+                    navController.navigate(Screen.ProjectList.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onSettingClick = {
+                    navController.navigate(Screen.Settings.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
                         launchSingleTop = true
                     }
                 },
@@ -87,21 +142,52 @@ fun FundsManagerNavHost(
             )
         }
 
-        composable(Screen.ReportHome.route) {
-            ReportHomeScreen(
-                onProjectMenuClick = {
+        composable(Screen.Settings.route) {
+            SettingsScreen(
+                onDashboardClick = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onProjectClick = {
                     navController.navigate(Screen.ProjectList.route) {
-                        popUpTo(Screen.ProjectList.route) { inclusive = false }
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
                         launchSingleTop = true
                     }
                 },
-                onTransactionMenuClick = {
+                onTransactionClick = {
                     navController.navigate(Screen.GlobalTransactionList.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
                         launchSingleTop = true
                     }
                 },
-                onProjectClick = { projectId ->
-                    navController.navigate(Screen.ProjectDashboard.createRoute(projectId))
+                onManageCategoriesClick = {
+                    navController.navigate(Screen.CategoryManager.route)
+                }
+            )
+        }
+
+        composable(Screen.CategoryManager.route) {
+            CategoryManagementScreen(
+                onBackClick = { navController.popBackStack() },
+                onDashboardClick = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onProjectClick = {
+                    navController.navigate(Screen.ProjectList.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onTransactionClick = {
+                    navController.navigate(Screen.GlobalTransactionList.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -147,13 +233,30 @@ fun FundsManagerNavHost(
             )
         ) {
             TransactionFormScreen(
-                onBackClick = { navController.popBackStack() }
-            )
-        }
-
-        composable(Screen.ImportPreview.route) {
-            ImportPreviewScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = { navController.popBackStack() },
+                onDashboardClick = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onProjectClick = { projectId ->
+                    navController.navigate(Screen.ProjectDashboard.createRoute(projectId)) {
+                        launchSingleTop = true
+                    }
+                },
+                onTransactionMenuClick = {
+                    navController.navigate(Screen.GlobalTransactionList.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onSettingClick = {
+                    navController.navigate(Screen.Settings.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                }
             )
         }
     }

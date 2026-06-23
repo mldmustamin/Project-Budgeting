@@ -10,6 +10,7 @@ interface FundsRepository {
     suspend fun insertProject(userId: Long, project: Project): Long
     suspend fun getOrCreateProject(userId: Long, name: String): Project
     suspend fun renameProject(id: Long, name: String)
+    suspend fun updateProjectSchedule(id: Long, startAt: Long, completedAt: Long?)
     suspend fun setProjectArchived(id: Long, isArchived: Boolean)
     suspend fun softDeleteProject(id: Long)
     
@@ -31,6 +32,10 @@ interface FundsRepository {
     
     // Category
     fun getAllCategories(): Flow<List<Category>>
+    suspend fun getCategoryById(id: Long): Category?
+    suspend fun insertCategory(category: Category): Long
+    suspend fun updateCategory(category: Category)
+    suspend fun softDeleteCategory(id: Long)
     
     // Attachment
     fun getAttachmentsByTransaction(transactionId: Long): Flow<List<Attachment>>

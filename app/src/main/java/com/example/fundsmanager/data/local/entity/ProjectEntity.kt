@@ -26,6 +26,8 @@ data class ProjectEntity(
     val name: String,
     val description: String? = null,
     val isArchived: Boolean = false,
+    val startAt: Long = System.currentTimeMillis(),
+    val completedAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val deletedAt: Long? = null

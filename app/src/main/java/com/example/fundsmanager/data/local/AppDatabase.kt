@@ -28,7 +28,7 @@ import com.example.fundsmanager.data.local.entity.UserEntity
         AttachmentEntity::class,
         AuditLogEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
