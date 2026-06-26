@@ -41,11 +41,14 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -93,6 +96,7 @@ fun GlobalTransactionScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    var showSortDialog by remember { mutableStateOf(false) }
     var pendingProofTransactionId by remember { mutableStateOf<Long?>(null) }
     var pendingDeleteTransactionId by remember { mutableStateOf<Long?>(null) }
 
@@ -157,13 +161,24 @@ fun GlobalTransactionScreen(
         )
     }
 
+    if (showSortDialog) {
+        SortTransactionDialog(
+            selected = uiState.selectedSort,
+            onDismiss = { showSortDialog = false },
+            onSelected = {
+                viewModel.onSortSelected(it)
+                showSortDialog = false
+            }
+        )
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("Transaksi", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.ExtraBold) },
                 actions = {
-                    IconButton(onClick = {}) { Icon(Icons.Default.FilterList, contentDescription = "Filter") }
+                    IconButton(onClick = { showSortDialog = true }) { Icon(Icons.Default.FilterList, contentDescription = "Sortir") }
                     IconButton(onClick = {}) { Icon(Icons.Default.MoreVert, contentDescription = "Menu") }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -227,6 +242,11 @@ fun GlobalTransactionScreen(
                     CompactChip(uiState.selectedType == type, type.toUiLabel()) { viewModel.onTypeSelected(type) }
                 }
             }
+
+            SortInfoCard(
+                selectedSort = uiState.selectedSort,
+                onClick = { showSortDialog = true }
+            )
 
             when {
                 uiState.isLoading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -293,6 +313,81 @@ private fun CompactChip(selected: Boolean, label: String, onClick: () -> Unit) {
 }
 
 @Composable
+private fun SortInfoCard(
+    selectedSort: GlobalTransactionSortOption,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        border = BorderStroke(1.dp, Color(0xFFE8EEF7))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Urutan: ${selectedSort.toUiLabel()}",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Icon(Icons.Default.FilterList, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+@Composable
+private fun SortTransactionDialog(
+    selected: GlobalTransactionSortOption,
+    onDismiss: () -> Unit,
+    onSelected: (GlobalTransactionSortOption) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Urutkan transaksi") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                GlobalTransactionSortOption.entries.forEach { option ->
+                    OutlinedButton(
+                        onClick = { onSelected(option) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(
+                            1.dp,
+                            if (option == selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                        )
+                    ) {
+                        Text(
+                            option.toUiLabel(),
+                            modifier = Modifier.fillMaxWidth(),
+                            fontWeight = if (option == selected) FontWeight.ExtraBold else FontWeight.SemiBold,
+                            color = if (option == selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Tutup") }
+        }
+    )
+}
+
+private fun GlobalTransactionSortOption.toUiLabel(): String = when (this) {
+    GlobalTransactionSortOption.LATEST -> "Terbaru"
+    GlobalTransactionSortOption.OLDEST -> "Terlama"
+    GlobalTransactionSortOption.HIGHEST_AMOUNT -> "Nominal terbesar"
+    GlobalTransactionSortOption.LOWEST_AMOUNT -> "Nominal terkecil"
+}
+
+@Composable
 private fun GlobalTransactionCard(
     item: GlobalTransactionItem,
     onClick: () -> Unit,
@@ -314,7 +409,25 @@ private fun GlobalTransactionCard(
                 Text(formatRupiah(transaction.realAmount), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.ExtraBold, color = amountColor)
             }
             Text(transaction.description, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold)
-            Text("${item.projectName}  •  ${item.accountName.ifBlank { "Akun belum dipilih" }}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.Folder,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(14.dp)
+                )
+                Text(
+                    "Project: ${item.projectName}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.ExtraBold
+                )
+            }
+            Text(
+                "Akun: ${item.accountName.ifBlank { "Akun belum dipilih" }}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 TypeBadge(transaction.type.toUiLabel())
                 Box(modifier = Modifier.clickable(onClick = onProofClick)) {

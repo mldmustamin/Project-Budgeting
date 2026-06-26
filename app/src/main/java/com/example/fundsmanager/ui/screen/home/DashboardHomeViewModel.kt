@@ -8,8 +8,6 @@ import com.example.fundsmanager.domain.model.Transaction
 import com.example.fundsmanager.domain.model.TransactionType
 import com.example.fundsmanager.domain.model.isIncome
 import com.example.fundsmanager.domain.repository.FundsRepository
-import com.example.fundsmanager.domain.usecase.CalculateProjectSummaryUseCase
-import com.example.fundsmanager.domain.usecase.GetProjectLedgerUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,30 +54,37 @@ data class DashboardHomeUiState(
 
 @HiltViewModel
 class DashboardHomeViewModel @Inject constructor(
-    private val repository: FundsRepository,
-    private val calculateProjectSummaryUseCase: CalculateProjectSummaryUseCase,
-    private val getProjectLedgerUseCase: GetProjectLedgerUseCase
+    private val repository: FundsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DashboardHomeUiState())
     val uiState: StateFlow<DashboardHomeUiState> = _uiState.asStateFlow()
+    private var lastRefreshAt = 0L
 
     init {
-        refreshDashboard()
+        refreshDashboard(force = true)
     }
 
-    fun refreshDashboard() {
+    fun refreshDashboard(force: Boolean = false) {
+        val now = System.currentTimeMillis()
+        if (!force) {
+            if (_uiState.value.isLoading) return
+            if (now - lastRefreshAt < 1_500L) return
+        }
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             runCatching {
                 withContext(Dispatchers.Default) {
                     val projects = repository.getAllProjects().first()
+                    val projectMap = projects.associateBy { it.id }
+                    val allTransactions = repository.getAllTransactions()
+                    val transactionsByProject = allTransactions.groupBy { it.projectId }
                     val summaries = projects.mapNotNull { project ->
-                        calculateProjectSummaryUseCase(project.id)?.let { summary -> project to summary }
+                        buildSummary(project, transactionsByProject[project.id].orEmpty())?.let { summary -> project to summary }
                     }
                     val activeItems = summaries.filter { (project, _) -> !project.isArchived }
-                    val allTransactions = projects.flatMap { project ->
-                        getProjectLedgerUseCase(project.id).map { transaction -> project to transaction }
+                    val timeline = allTransactions.mapNotNull { transaction ->
+                        projectMap[transaction.projectId]?.let { project -> project to transaction }
                     }.sortedWith(compareByDescending<Pair<Project, Transaction>> { it.second.date }.thenByDescending { it.second.id })
 
                     val projectItems = activeItems.map { (project, summary) ->
@@ -93,7 +98,7 @@ class DashboardHomeViewModel @Inject constructor(
                     val longestRunning = projects
                         .filter { !it.isArchived }
                         .minByOrNull { it.startAt.takeIf { start -> start > 0L } ?: Long.MAX_VALUE }
-                    val biggestExpense = allTransactions
+                    val biggestExpense = timeline
                         .filter { it.second.type != TransactionType.FUND_IN }
                         .maxByOrNull { it.second.realAmount }
 
@@ -107,7 +112,7 @@ class DashboardHomeViewModel @Inject constructor(
                         activeDifference = activeItems.sumOf { it.second.netPosition },
                         overallDifference = summaries.sumOf { it.second.netPosition },
                         projectItems = projectItems,
-                        recentTransactions = allTransactions.take(6).map { (project, transaction) ->
+                        recentTransactions = timeline.take(6).map { (project, transaction) ->
                             DashboardRecentTransactionItem(transaction = transaction, projectName = project.name)
                         },
                         longestRunningProject = longestRunning?.let { project ->
@@ -129,6 +134,7 @@ class DashboardHomeViewModel @Inject constructor(
                     )
                 }
             }.onSuccess { state ->
+                lastRefreshAt = System.currentTimeMillis()
                 _uiState.value = state
             }.onFailure { error ->
                 _uiState.value = DashboardHomeUiState(
@@ -137,6 +143,45 @@ class DashboardHomeViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    private fun buildSummary(project: Project, transactions: List<Transaction>): ProjectSummary? {
+        if (project.deletedAt != null) return null
+        var totalFundIn = 0L
+        var totalOfficeReported = 0L
+        var totalOfficeReal = 0L
+        var totalPersonalExpense = 0L
+
+        transactions.forEach { tx ->
+            when (tx.type) {
+                TransactionType.FUND_IN -> totalFundIn += tx.reportedAmount
+                TransactionType.OFFICE_EXPENSE -> {
+                    totalOfficeReported += tx.reportedAmount
+                    totalOfficeReal += tx.realAmount
+                }
+                TransactionType.PERSONAL_EXPENSE -> totalPersonalExpense += tx.realAmount
+            }
+        }
+
+        val saving = totalOfficeReported - totalOfficeReal
+        val remainingReported = totalFundIn - totalOfficeReported
+        val remainingReal = totalFundIn - totalOfficeReal
+        val totalCashOut = totalOfficeReal + totalPersonalExpense
+        val netPosition = totalFundIn - totalCashOut
+
+        return ProjectSummary(
+            projectId = project.id,
+            projectName = project.name,
+            totalFundIn = totalFundIn,
+            totalOfficeReported = totalOfficeReported,
+            totalOfficeReal = totalOfficeReal,
+            totalPersonalExpense = totalPersonalExpense,
+            saving = saving,
+            remainingReported = remainingReported,
+            remainingReal = remainingReal,
+            totalCashOut = totalCashOut,
+            netPosition = netPosition
+        )
     }
 
     private fun Project.ageInDays(): Long {

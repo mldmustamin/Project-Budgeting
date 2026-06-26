@@ -12,6 +12,9 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions WHERE projectId = :projectId AND deletedAt IS NULL")
     suspend fun getTransactionsByProjectSync(projectId: Long): List<TransactionEntity>
 
+    @Query("SELECT * FROM transactions WHERE deletedAt IS NULL ORDER BY date DESC, createdAt DESC")
+    suspend fun getAllTransactionsSync(): List<TransactionEntity>
+
     @Query("SELECT * FROM transactions WHERE id = :id AND deletedAt IS NULL")
     suspend fun getTransactionById(id: Long): TransactionEntity?
 

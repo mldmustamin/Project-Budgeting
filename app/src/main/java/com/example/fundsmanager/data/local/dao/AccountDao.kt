@@ -9,11 +9,17 @@ interface AccountDao {
     @Query("SELECT * FROM accounts WHERE deletedAt IS NULL ORDER BY name ASC")
     fun getAllAccounts(): Flow<List<AccountEntity>>
 
+    @Query("SELECT * FROM accounts WHERE id = :id AND deletedAt IS NULL")
+    suspend fun getAccountById(id: Long): AccountEntity?
+
     @Query("SELECT * FROM accounts WHERE name = :name AND deletedAt IS NULL LIMIT 1")
     suspend fun getAccountByName(name: String): AccountEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAccount(account: AccountEntity): Long
+
+    @Update
+    suspend fun updateAccount(account: AccountEntity)
 
     @Query("UPDATE accounts SET deletedAt = :deletedAt WHERE id = :id")
     suspend fun softDeleteAccount(id: Long, deletedAt: Long = System.currentTimeMillis())

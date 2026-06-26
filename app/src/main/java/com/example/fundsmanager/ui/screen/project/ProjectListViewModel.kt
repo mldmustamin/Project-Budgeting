@@ -4,18 +4,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fundsmanager.domain.model.Project
 import com.example.fundsmanager.domain.model.ProjectSummary
+import com.example.fundsmanager.domain.model.Transaction
+import com.example.fundsmanager.domain.model.TransactionType
 import com.example.fundsmanager.domain.repository.FundsRepository
-import com.example.fundsmanager.domain.usecase.CalculateProjectSummaryUseCase
-import com.example.fundsmanager.domain.usecase.GetProjectLedgerUseCase
 import com.example.fundsmanager.util.logging.AppLogCategory
 import com.example.fundsmanager.util.logging.AppLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 import javax.inject.Inject
@@ -35,8 +37,6 @@ data class ProjectListUiState(
 @HiltViewModel
 class ProjectListViewModel @Inject constructor(
     private val repository: FundsRepository,
-    private val calculateProjectSummaryUseCase: CalculateProjectSummaryUseCase,
-    private val getProjectLedgerUseCase: GetProjectLedgerUseCase,
     private val appLogger: AppLogger
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ProjectListUiState())
@@ -234,14 +234,56 @@ class ProjectListViewModel @Inject constructor(
 
     private fun refreshProjectItems() {
         viewModelScope.launch {
-            val showArchived = _uiState.value.showArchived
-            val visibleProjects = allProjects.filter { it.isArchived == showArchived }
-            val items = visibleProjects.map { project ->
-                val summary = calculateProjectSummaryUseCase(project.id)
-                val transactionCount = getProjectLedgerUseCase(project.id).count()
-                ProjectListItem(project, summary, transactionCount)
+            val items = withContext(Dispatchers.Default) {
+                val showArchived = _uiState.value.showArchived
+                val visibleProjects = allProjects.filter { it.isArchived == showArchived }
+                val transactionsByProject = repository.getAllTransactions().groupBy { it.projectId }
+                visibleProjects.map { project ->
+                    val transactions = transactionsByProject[project.id].orEmpty()
+                    val summary = buildSummary(project, transactions)
+                    val transactionCount = transactions.size
+                    ProjectListItem(project, summary, transactionCount)
+                }
             }
             _uiState.update { it.copy(projects = items) }
         }
+    }
+
+    private fun buildSummary(project: Project, transactions: List<Transaction>): ProjectSummary {
+        var totalFundIn = 0L
+        var totalOfficeReported = 0L
+        var totalOfficeReal = 0L
+        var totalPersonalExpense = 0L
+
+        transactions.forEach { tx ->
+            when (tx.type) {
+                TransactionType.FUND_IN -> totalFundIn += tx.reportedAmount
+                TransactionType.OFFICE_EXPENSE -> {
+                    totalOfficeReported += tx.reportedAmount
+                    totalOfficeReal += tx.realAmount
+                }
+                TransactionType.PERSONAL_EXPENSE -> totalPersonalExpense += tx.realAmount
+            }
+        }
+
+        val saving = totalOfficeReported - totalOfficeReal
+        val remainingReported = totalFundIn - totalOfficeReported
+        val remainingReal = totalFundIn - totalOfficeReal
+        val totalCashOut = totalOfficeReal + totalPersonalExpense
+        val netPosition = totalFundIn - totalCashOut
+
+        return ProjectSummary(
+            projectId = project.id,
+            projectName = project.name,
+            totalFundIn = totalFundIn,
+            totalOfficeReported = totalOfficeReported,
+            totalOfficeReal = totalOfficeReal,
+            totalPersonalExpense = totalPersonalExpense,
+            saving = saving,
+            remainingReported = remainingReported,
+            remainingReal = remainingReal,
+            totalCashOut = totalCashOut,
+            netPosition = netPosition
+        )
     }
 }

@@ -1,29 +1,40 @@
 # Funds Manager
 
-Funds Manager adalah aplikasi Android offline-first untuk pencatatan dana project dan perjalanan dinas. Aplikasi ini fokus pada alur kerja keuangan lapangan: project, dana masuk, expense kantor, expense pribadi, bukti transaksi, dan export laporan.
+Funds Manager adalah aplikasi Android offline-first untuk mengelola dana project dengan alur yang sederhana dan fokus pada kebutuhan operasional lapangan. Build saat ini sudah berada pada baseline stabil awal dengan flow utama yang berfungsi: project, transaksi, dashboard, kategori, lampiran bukti, dan pengaturan dasar.
 
-## Fitur Utama
+## Status Build
 
-- Manajemen project aktif dan project arsip.
-- Dashboard per project dengan ringkasan keuangan.
-- Pencatatan transaksi:
-  - `FUND_IN`
-  - `OFFICE_EXPENSE`
-  - `PERSONAL_EXPENSE`
-- Form transaksi dengan:
-  - tanggal,
-  - keterangan,
-  - nominal dilaporkan,
-  - nominal real,
-  - akun,
-  - kategori,
-  - catatan.
-- Daftar transaksi dengan pencarian, filter tipe, filter bukti, dan soft delete.
-- Lampiran bukti transaksi dari galeri atau kamera.
-- Export laporan per project ke PDF, Excel, dan CSV.
-- Logging navigasi dan crash lewat file logger lokal.
+- Status: stable production-ready build
+- Branch terakhir dipush: `main`
+- Commit stabil terakhir: `211e154`
 
-## Tech Stack
+## Fitur yang Sudah Aktif
+
+- Dashboard utama dengan ringkasan keuangan, quick action, dan transaksi terbaru
+- Daftar project aktif dan arsip
+- Tambah project dengan `project start` dan `project selesai`
+- Edit nama project
+- Edit tanggal start dan end project
+- Dashboard detail per project
+- Form transaksi dengan 2 flow:
+  - `Pemasukan` -> `Transfer Dana`
+  - `Pengeluaran` -> `Pengeluaran Pekerjaan` dan `Pengeluaran Pribadi`
+- Edit transaksi
+- Daftar transaksi global dan daftar transaksi per project
+- Upload bukti transaksi dari file atau kamera
+- Kelola kategori transaksi dari menu setting
+- Ikon aplikasi kustom
+- Refresh data saat screen utama kembali aktif
+
+## Catatan Produk Saat Ini
+
+- Aplikasi berjalan lokal tanpa backend cloud
+- Semua nominal uang disimpan sebagai `Long`
+- Soft delete dipakai untuk transaksi dan project
+- `Backup & ekspor` masih berstatus `Coming soon`
+- `Hubungi developer` di setting mengarah ke WhatsApp
+
+## Stack
 
 - Kotlin
 - Jetpack Compose Material 3
@@ -31,89 +42,49 @@ Funds Manager adalah aplikasi Android offline-first untuk pencatatan dana projec
 - Hilt
 - Navigation Compose
 - DataStore
-- Kotlin Serialization
 - Coil
 
-## Persyaratan
+## Build APK
 
-- Android Studio terbaru yang mendukung AGP `8.10.0`
-- JDK 17
-- Android SDK dengan compile/target SDK `36`
-- Minimum SDK `26`
-
-## Cara Menjalankan
-
-1. Buka project ini di Android Studio.
-2. Tunggu Gradle sync selesai.
-3. Jalankan aplikasi ke emulator atau device Android.
-
-Atau lewat terminal:
+Build debug bisa dibuat dengan:
 
 ```bash
 ./gradlew assembleDebug
-./gradlew testDebugUnitTest
 ```
 
-APK debug akan dihasilkan di:
+Hasil APK debug ada di:
 
 ```text
 app/build/outputs/apk/debug/app-debug.apk
 ```
 
-## Alur Aplikasi
+## Menjalankan Project
 
-1. Aplikasi membuka `Project List`.
-2. User membuat project baru atau membuka project yang sudah ada.
-3. Di `Dashboard`, user melihat ringkasan project dan transaksi terbaru.
-4. User menambah transaksi lewat `Form Transaksi`.
-5. User bisa membuka `Daftar Transaksi`, mencari transaksi, memberi bukti, atau menghapus secara soft delete.
-6. Laporan project dapat diexport ke PDF, Excel, atau CSV dari dashboard.
+1. Buka project ini di Android Studio.
+2. Gunakan JDK 17.
+3. Pastikan Android SDK untuk `compileSdk 36` tersedia.
+4. Jalankan ke emulator atau device Android.
 
-## Struktur Proyek
+## Struktur Ringkas
 
 ```text
 app/src/main/java/com/example/fundsmanager
 ├── data
-│   ├── local
-│   ├── mapper
-│   ├── repository
-│   └── service
-├── domain
-│   ├── model
-│   ├── repository
-│   ├── service
-│   └── usecase
-├── ui
-│   ├── component
-│   ├── navigation
-│   └── screen
 ├── di
+├── domain
+├── ui
 └── util
 ```
 
-## Komponen Domain Penting
+## Dokumentasi Tambahan
 
-- `FundsRepository` sebagai kontrak data utama.
-- `CalculateProjectSummaryUseCase` sebagai sumber tunggal perhitungan ringkasan project.
-- `ExportCsvUseCase` untuk export CSV ringkasan transaksi dan project.
-- `ReportFileRepository` untuk pembuatan file PDF dan Excel.
+Seluruh dokumen pendukung sudah dirapikan di folder [docs](/Users/fiyyalisanna/AndroidStudioProjects/FundsManager/docs), termasuk:
 
-## Catatan Implementasi
-
-- Aplikasi ini tidak menggunakan backend cloud atau server sync.
-- Nominal uang disimpan sebagai `Long`, bukan `Double` atau `Float`.
-- Penghapusan transaksi memakai soft delete.
-- UI dibuat dengan pendekatan finance app yang compact dan card-based.
-- Route awal aplikasi adalah `project_list`.
-
-## Testing
-
-Project ini memiliki unit test dan instrumented test. Perintah yang umum dipakai:
-
-```bash
-./gradlew testDebugUnitTest
-./gradlew assembleDebug
-```
+- [appbrief.md](/Users/fiyyalisanna/AndroidStudioProjects/FundsManager/docs/appbrief.md)
+- [deepreview.md](/Users/fiyyalisanna/AndroidStudioProjects/FundsManager/docs/deepreview.md)
+- [Funds-Manager.md](/Users/fiyyalisanna/AndroidStudioProjects/FundsManager/docs/Funds-Manager.md)
+- [LOGICFIX.md](/Users/fiyyalisanna/AndroidStudioProjects/FundsManager/docs/LOGICFIX.md)
+- [UIAdjustment.md](/Users/fiyyalisanna/AndroidStudioProjects/FundsManager/docs/UIAdjustment.md)
 
 ## Lisensi
 

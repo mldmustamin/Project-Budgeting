@@ -160,7 +160,7 @@ fun DashboardScreen(
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyMedium
                     )
-                    PrimaryButton(text = "Coba Lagi", onClick = viewModel::refreshDashboard)
+                    PrimaryButton(text = "Coba Lagi", onClick = { viewModel.refreshDashboard(force = true) })
                 }
                 is DashboardUiState.Success -> DashboardContent(
                     summary = state.summary,

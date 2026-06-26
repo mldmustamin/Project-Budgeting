@@ -65,11 +65,17 @@ import com.example.fundsmanager.ui.component.PrimaryButton
 import com.example.fundsmanager.ui.component.ReceiptBadge
 import com.example.fundsmanager.ui.component.TypeBadge
 import com.example.fundsmanager.ui.component.formatRupiah
+import com.example.fundsmanager.ui.screen.home.HomeBottomBar
+import com.example.fundsmanager.ui.screen.home.HomeMenu
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TransactionListScreen(
     onBackClick: () -> Unit,
+    onDashboardClick: () -> Unit,
+    onProjectClick: (Long) -> Unit,
+    onTransactionMenuClick: () -> Unit,
+    onSettingClick: () -> Unit,
     onAddTransactionClick: (Long) -> Unit,
     onEditTransaction: (Long, Long) -> Unit,
     viewModel: TransactionListViewModel = hiltViewModel()
@@ -113,6 +119,19 @@ fun TransactionListScreen(
                     IconButton(onClick = {}) { Icon(Icons.Default.MoreVert, contentDescription = "Menu") }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
+            )
+        },
+        bottomBar = {
+            HomeBottomBar(
+                selected = HomeMenu.Transactions,
+                onDashboardClick = onDashboardClick,
+                onProjectClick = {
+                    if (uiState.projectId > 0L) {
+                        onProjectClick(uiState.projectId)
+                    }
+                },
+                onTransactionClick = onTransactionMenuClick,
+                onSettingClick = onSettingClick
             )
         },
         floatingActionButton = {

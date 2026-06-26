@@ -24,7 +24,7 @@ fun MoneyInputField(
     placeholder: String? = null
 ) {
     val rawDigits = digitsOnly(value)
-    val displayValue = rawDigits.toLongOrNull()?.let { "Rp ${formatMoney(it)}" }.orEmpty()
+    val formattedPreview = rawDigits.toLongOrNull()?.let { "Rp ${formatMoney(it)}" }.orEmpty()
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
@@ -34,11 +34,21 @@ fun MoneyInputField(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         OutlinedTextField(
-            value = displayValue,
+            value = rawDigits,
             onValueChange = { input -> onValueChange(digitsOnly(input)) },
             placeholder = placeholder?.let { { Text(it) } },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
+            prefix = { Text("Rp ") },
+            supportingText = {
+                if (formattedPreview.isNotBlank()) {
+                    Text(
+                        text = formattedPreview,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
             shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = MaterialTheme.colorScheme.primary,

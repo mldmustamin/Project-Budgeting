@@ -46,7 +46,8 @@ fun SettingsScreen(
     onDashboardClick: () -> Unit,
     onProjectClick: () -> Unit,
     onTransactionClick: () -> Unit,
-    onManageCategoriesClick: () -> Unit
+    onManageCategoriesClick: () -> Unit,
+    onManageAccountsClick: () -> Unit
 ) {
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
@@ -119,6 +120,12 @@ fun SettingsScreen(
                 title = "Backup & ekspor",
                 body = "Coming soon. Fitur backup dan ekspor akan hadir di update berikutnya.",
                 icon = Icons.Default.Settings
+            )
+            SettingsActionCard(
+                title = "Pengaturan akun",
+                body = "Kelola akun transaksi seperti Cash in Hand, Transfer Kantor, dan akun lainnya.",
+                icon = Icons.Default.Settings,
+                onClick = onManageAccountsClick
             )
             SettingsActionCard(
                 title = "Kategori transaksi",

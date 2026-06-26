@@ -14,6 +14,7 @@ import com.example.fundsmanager.ui.screen.dashboard.DashboardScreen
 import com.example.fundsmanager.ui.screen.home.DashboardHomeScreen
 import com.example.fundsmanager.ui.screen.home.GlobalTransactionScreen
 import com.example.fundsmanager.ui.screen.project.ProjectListScreen
+import com.example.fundsmanager.ui.screen.settings.AccountManagementScreen
 import com.example.fundsmanager.ui.screen.settings.CategoryManagementScreen
 import com.example.fundsmanager.ui.screen.settings.SettingsScreen
 import com.example.fundsmanager.ui.screen.transaction.TransactionListScreen
@@ -164,6 +165,33 @@ fun FundsManagerNavHost(
                 },
                 onManageCategoriesClick = {
                     navController.navigate(Screen.CategoryManager.route)
+                },
+                onManageAccountsClick = {
+                    navController.navigate(Screen.AccountManager.route)
+                }
+            )
+        }
+
+        composable(Screen.AccountManager.route) {
+            AccountManagementScreen(
+                onBackClick = { navController.popBackStack() },
+                onDashboardClick = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onProjectClick = {
+                    navController.navigate(Screen.ProjectList.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onTransactionClick = {
+                    navController.navigate(Screen.GlobalTransactionList.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -213,6 +241,29 @@ fun FundsManagerNavHost(
         ) {
             TransactionListScreen(
                 onBackClick = { navController.popBackStack() },
+                onDashboardClick = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onProjectClick = { projectId ->
+                    navController.navigate(Screen.ProjectDashboard.createRoute(projectId)) {
+                        launchSingleTop = true
+                    }
+                },
+                onTransactionMenuClick = {
+                    navController.navigate(Screen.GlobalTransactionList.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
+                onSettingClick = {
+                    navController.navigate(Screen.Settings.route) {
+                        popUpTo(Screen.Dashboard.route) { inclusive = false }
+                        launchSingleTop = true
+                    }
+                },
                 onAddTransactionClick = { projectId ->
                     navController.navigate(Screen.TransactionForm.createRoute(projectId))
                 },

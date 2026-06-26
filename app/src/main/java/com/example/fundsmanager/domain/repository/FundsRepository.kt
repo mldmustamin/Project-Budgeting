@@ -16,6 +16,7 @@ interface FundsRepository {
     
     // Transaction
     suspend fun getTransactionsByProject(projectId: Long): List<Transaction>
+    suspend fun getAllTransactions(): List<Transaction>
     suspend fun getTransactionByHash(hash: String): Transaction?
     suspend fun getTransactionById(id: Long): Transaction?
     suspend fun insertTransactions(transactions: List<Transaction>)
@@ -24,9 +25,12 @@ interface FundsRepository {
     suspend fun softDeleteTransaction(id: Long)
     
     // Account
+    suspend fun getAccountById(id: Long): Account?
     suspend fun getAccountByName(name: String): Account?
     fun getAllAccounts(): Flow<List<Account>>
     suspend fun insertAccount(account: Account): Long
+    suspend fun updateAccount(account: Account)
+    suspend fun softDeleteAccount(id: Long)
     suspend fun getOrCreateAccount(userId: Long, name: String): Account
     suspend fun getDefaultCashAccount(userId: Long): Account
     

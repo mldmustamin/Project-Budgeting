@@ -29,11 +29,19 @@ data class GlobalTransactionItem(
     val hasReceipt: Boolean
 )
 
+enum class GlobalTransactionSortOption {
+    LATEST,
+    OLDEST,
+    HIGHEST_AMOUNT,
+    LOWEST_AMOUNT
+}
+
 data class GlobalTransactionUiState(
     val projects: List<Project> = emptyList(),
     val items: List<GlobalTransactionItem> = emptyList(),
     val searchQuery: String = "",
     val selectedType: TransactionType? = null,
+    val selectedSort: GlobalTransactionSortOption = GlobalTransactionSortOption.LATEST,
     val isLoading: Boolean = true,
     val message: String? = null
 )
@@ -63,6 +71,11 @@ class GlobalTransactionViewModel @Inject constructor(
 
     fun onTypeSelected(type: TransactionType?) {
         _uiState.update { it.copy(selectedType = type) }
+        applyFilters()
+    }
+
+    fun onSortSelected(sort: GlobalTransactionSortOption) {
+        _uiState.update { it.copy(selectedSort = sort) }
         applyFilters()
     }
 
@@ -157,6 +170,24 @@ class GlobalTransactionViewModel @Inject constructor(
                 item.projectName.lowercase().contains(query)
             matchesType && matchesQuery
         }
-        _uiState.update { it.copy(items = filtered, isLoading = isLoading) }
+        val sorted = when (current.selectedSort) {
+            GlobalTransactionSortOption.LATEST -> filtered.sortedWith(
+                compareByDescending<GlobalTransactionItem> { it.transaction.date }
+                    .thenByDescending { it.transaction.id }
+            )
+            GlobalTransactionSortOption.OLDEST -> filtered.sortedWith(
+                compareBy<GlobalTransactionItem> { it.transaction.date }
+                    .thenBy { it.transaction.id }
+            )
+            GlobalTransactionSortOption.HIGHEST_AMOUNT -> filtered.sortedWith(
+                compareByDescending<GlobalTransactionItem> { it.transaction.realAmount }
+                    .thenByDescending { it.transaction.date }
+            )
+            GlobalTransactionSortOption.LOWEST_AMOUNT -> filtered.sortedWith(
+                compareBy<GlobalTransactionItem> { it.transaction.realAmount }
+                    .thenByDescending { it.transaction.date }
+            )
+        }
+        _uiState.update { it.copy(items = sorted, isLoading = isLoading) }
     }
 }

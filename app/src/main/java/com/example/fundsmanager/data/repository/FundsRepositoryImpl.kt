@@ -140,6 +140,10 @@ class FundsRepositoryImpl @Inject constructor(
         return transactionDao.getTransactionsByProjectSync(projectId).map { it.toDomain() }
     }
 
+    override suspend fun getAllTransactions(): List<Transaction> {
+        return transactionDao.getAllTransactionsSync().map { it.toDomain() }
+    }
+
     override suspend fun getTransactionByHash(hash: String): Transaction? {
         return transactionDao.getTransactionByHash(hash)?.toDomain()
     }
@@ -219,12 +223,32 @@ class FundsRepositoryImpl @Inject constructor(
         return accountDao.getAccountByName(name)?.toDomain()
     }
 
+    override suspend fun getAccountById(id: Long): Account? {
+        return accountDao.getAccountById(id)?.toDomain()
+    }
+
     override fun getAllAccounts(): Flow<List<Account>> {
         return accountDao.getAllAccounts().map { list -> list.map { it.toDomain() } }
     }
 
     override suspend fun insertAccount(account: Account): Long {
         return accountDao.insertAccount(account.toEntity())
+    }
+
+    override suspend fun updateAccount(account: Account) {
+        accountDao.getAccountById(account.id)?.let { existing ->
+            accountDao.updateAccount(
+                existing.copy(
+                    name = account.name.trim(),
+                    description = account.description,
+                    updatedAt = System.currentTimeMillis()
+                )
+            )
+        }
+    }
+
+    override suspend fun softDeleteAccount(id: Long) {
+        accountDao.softDeleteAccount(id)
     }
 
     override suspend fun getOrCreateAccount(userId: Long, name: String): Account {

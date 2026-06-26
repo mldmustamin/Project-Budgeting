@@ -38,12 +38,18 @@ class DashboardViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow<DashboardUiState>(DashboardUiState.Loading)
     val uiState: StateFlow<DashboardUiState> = _uiState.asStateFlow()
+    private var lastRefreshAt = 0L
 
     init {
-        refreshDashboard()
+        refreshDashboard(force = true)
     }
 
-    fun refreshDashboard() {
+    fun refreshDashboard(force: Boolean = false) {
+        val now = System.currentTimeMillis()
+        if (!force) {
+            if (_uiState.value is DashboardUiState.Loading) return
+            if (now - lastRefreshAt < 1_500L) return
+        }
         viewModelScope.launch {
             _uiState.value = DashboardUiState.Loading
             try {
@@ -52,7 +58,7 @@ class DashboardViewModel @Inject constructor(
                     val recentItems = getProjectLedgerUseCase(projectId)
                         .sortedByDescending { it.date }
                         .take(10)
-                    
+                    lastRefreshAt = System.currentTimeMillis()
                     _uiState.value = DashboardUiState.Success(summary, recentItems)
                 } else {
                     _uiState.value = DashboardUiState.Error("Project tidak tersedia")

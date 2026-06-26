@@ -103,7 +103,7 @@ fun DashboardHomeScreen(
                     )
                 },
                 actions = {
-                    IconButton(onClick = viewModel::refreshDashboard) {
+                    IconButton(onClick = { viewModel.refreshDashboard(force = true) }) {
                         Icon(Icons.Default.Refresh, contentDescription = "Refresh dashboard")
                     }
                 },
@@ -140,7 +140,7 @@ fun DashboardHomeScreen(
                     title = "Dashboard belum siap",
                     body = uiState.error,
                     action = {
-                        PrimaryButton(text = "Coba Lagi", onClick = viewModel::refreshDashboard)
+                        PrimaryButton(text = "Coba Lagi", onClick = { viewModel.refreshDashboard(force = true) })
                     }
                 )
             }
