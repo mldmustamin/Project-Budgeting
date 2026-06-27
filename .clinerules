@@ -1,0 +1,33 @@
+FundManager V2 agent rules
+
+Always treat repo docs as source of truth.
+
+Core constraints:
+- Keep Android local-first unless docs explicitly say otherwise.
+- Do not replace Room with another database.
+- Do not change money fields to Double or Float.
+- Keep all currency math in Long / bigint style integers.
+- Do not assume one device equals one user.
+- Preserve existing soft-delete behavior unless a migration plan is documented.
+- Keep changes small and additive by default.
+- Inspect relevant files before editing.
+- Summarize risks and files to change before making code edits.
+- Run the most relevant tests after changes when possible.
+- Prefer updating docs when design or policy changes.
+
+Reference docs:
+- docs/00_REPO_AUDIT.md
+- docs/01_EXISTING_ANDROID_COMPATIBILITY.md
+- docs/02_PRODUCT_SCOPE.md
+- docs/03_ARCHITECTURE.md
+- docs/04_ANDROID_LOCAL_FIRST_MULTI_USER.md
+- docs/05_SYNC_ENGINE.md
+- docs/06_BACKEND_API_CONTRACT.md
+- docs/07_WEB_DASHBOARD_SPEC.md
+- docs/08_FINANCE_RULES.md
+- docs/09_RBAC_SECURITY.md
+- docs/10_DATABASE_SCHEMA.md
+- docs/11_REPORT_EXPORT.md
+- docs/12_TEST_PLAN.md
+- docs/13_DEPLOYMENT_BACKUP_RESTORE.md
+- docs/14_RELEASE_CHECKLIST.md

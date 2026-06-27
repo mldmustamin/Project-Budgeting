@@ -49,7 +49,7 @@ class ExportCsvUseCaseTest {
         // Check header
         assertTrue(csv.contains("Tanggal,Keterangan,Jenis,Nominal Dilaporkan,Nominal Real,Selisih,Catatan"))
         // Check raw numeric data with user-facing transaction type label.
-        assertTrue(csv.contains("2023-01-01,F,Dana Masuk,1000,1000,0,"))
+        assertTrue(csv.contains("2023-01-01,F,Transfer Dana,1000,1000,0,"))
         // Check summary footer
         assertTrue(csv.contains("RINGKASAN"))
         assertTrue(csv.contains("Total Dana Masuk,1000"))

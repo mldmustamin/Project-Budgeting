@@ -1,0 +1,15 @@
+---
+description: Sync engine and idempotency rules
+globs: app/src/main/java/com/example/fundsmanager/**/*.kt,backend/**/*.ts,backend/**/*.py
+alwaysApply: false
+---
+
+# Sync Engine Rules
+
+- Sync outbox must be per user/device/session.
+- Use idempotency key: `{serverUserId}:{deviceId}:{operationId}`.
+- Retry must not create duplicate server records.
+- Pull updates Android rows by uuid, never by local id.
+- Attachment upload uses a separate queue.
+- Server validates user, device, project assignment, permission, and closing period.
+- Server rejected data must remain visible locally with reason.

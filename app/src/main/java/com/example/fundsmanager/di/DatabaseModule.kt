@@ -3,10 +3,12 @@ package com.example.fundsmanager.di
 import android.content.Context
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.fundsmanager.data.local.AppDatabase
+import com.example.fundsmanager.data.local.DatabaseMigrations
+import com.example.fundsmanager.data.local.SyncStatus
 import com.example.fundsmanager.data.local.dao.*
+import com.example.fundsmanager.util.UuidGenerator
 import com.example.fundsmanager.util.logging.AppLogCategory
 import com.example.fundsmanager.util.logging.AppLogger
 import dagger.Module
@@ -37,7 +39,7 @@ object DatabaseModule {
             context,
             AppDatabase::class.java,
             "funds_manager_db"
-        ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+        ).addMigrations(*DatabaseMigrations.ALL)
             .addCallback(object : RoomDatabase.Callback() {
             override fun onCreate(db: SupportSQLiteDatabase) {
                 super.onCreate(db)
@@ -52,65 +54,15 @@ object DatabaseModule {
         }).build()
     }
 
-    private val MIGRATION_1_2 = object : Migration(1, 2) {
-        override fun migrate(db: SupportSQLiteDatabase) {
-            db.execSQL(
-                """
-                CREATE TABLE IF NOT EXISTS audit_logs (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                    userId INTEGER NOT NULL,
-                    entityType TEXT NOT NULL,
-                    entityId INTEGER NOT NULL,
-                    action TEXT NOT NULL,
-                    oldValueJson TEXT,
-                    newValueJson TEXT,
-                    createdAt INTEGER NOT NULL
-                )
-                """.trimIndent()
-            )
-            db.execSQL("CREATE INDEX IF NOT EXISTS index_audit_logs_entityType_entityId ON audit_logs(entityType, entityId)")
-            db.execSQL("CREATE INDEX IF NOT EXISTS index_audit_logs_userId ON audit_logs(userId)")
-            db.execSQL("CREATE INDEX IF NOT EXISTS index_audit_logs_createdAt ON audit_logs(createdAt)")
-        }
-    }
-
-    private val MIGRATION_2_3 = object : Migration(2, 3) {
-        override fun migrate(db: SupportSQLiteDatabase) {
-            db.execSQL(
-                "INSERT OR IGNORE INTO users (id, name, email, createdAt, updatedAt, deletedAt) VALUES (1, 'Local User', NULL, 0, 0, NULL)"
-            )
-        }
-    }
-
-    private val MIGRATION_3_4 = object : Migration(3, 4) {
-        override fun migrate(db: SupportSQLiteDatabase) {
-            // Reserved version step. Version 4 previously held an experimental local queue
-            // during development; runtime UI builds should not add sync infrastructure.
-        }
-    }
-
-    private val MIGRATION_4_5 = object : Migration(4, 5) {
-        override fun migrate(db: SupportSQLiteDatabase) {
-            // Keep user data intact. Extra experimental tables from v4, if present, are ignored.
-        }
-    }
-
-    private val MIGRATION_5_6 = object : Migration(5, 6) {
-        override fun migrate(db: SupportSQLiteDatabase) {
-            db.execSQL("ALTER TABLE projects ADD COLUMN startAt INTEGER NOT NULL DEFAULT 0")
-            db.execSQL("ALTER TABLE projects ADD COLUMN completedAt INTEGER")
-        }
-    }
-
     private fun seedDatabase(db: SupportSQLiteDatabase) {
         val now = System.currentTimeMillis()
+        val localUserUuid = UuidGenerator.newUuid()
 
         db.execSQL(
-            "INSERT OR IGNORE INTO users (id, name, email, createdAt, updatedAt, deletedAt) VALUES (?, ?, NULL, ?, ?, NULL)",
-            arrayOf<Any>(1, "Local User", now, now)
+            "INSERT OR IGNORE INTO users (id, name, email, uuid, syncStatus, createdAt, updatedAt, deletedAt) VALUES (?, ?, NULL, ?, ?, ?, ?, NULL)",
+            arrayOf<Any>(1, "Local User", localUserUuid, SyncStatus.PENDING, now, now)
         )
-        
-        // Seed Accounts
+
         val defaultAccounts = listOf(
             "Cash in Hand", "Transfer Kantor", "Rekening Pribadi", "Reimburse", "Lain-lain"
         )
@@ -121,7 +73,6 @@ object DatabaseModule {
             )
         }
 
-        // Seed Categories
         val defaultCategories = listOf(
             "Transfer Dana",
             "Pengeluaran Pekerjaan",

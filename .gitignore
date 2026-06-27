@@ -1,6 +1,20 @@
 *.iml
 .gradle
+.tooling/
 /local.properties
+
+# Backend (Laravel 11)
+/backend/vendor/
+/backend/node_modules/
+/backend/.env
+/backend/storage/app/public/
+/backend/storage/framework/cache/data/
+/backend/storage/framework/sessions/
+/backend/storage/framework/views/
+/backend/storage/logs/
+/backend/tests/Browser/console/
+/backend/tests/Browser/screenshots/
+/backend/database/database.sqlite
 /.idea/caches
 /.idea/libraries
 /.idea/modules.xml

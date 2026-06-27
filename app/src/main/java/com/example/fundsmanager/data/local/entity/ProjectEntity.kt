@@ -4,6 +4,8 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.example.fundsmanager.data.local.SyncStatus
+import com.example.fundsmanager.util.UuidGenerator
 
 @Entity(
     tableName = "projects",
@@ -16,7 +18,8 @@ import androidx.room.PrimaryKey
         )
     ],
     indices = [
-        Index(value = ["userId"])
+        Index(value = ["userId"]),
+        Index(value = ["uuid"], unique = true)
     ]
 )
 data class ProjectEntity(
@@ -28,6 +31,11 @@ data class ProjectEntity(
     val isArchived: Boolean = false,
     val startAt: Long = System.currentTimeMillis(),
     val completedAt: Long? = null,
+    val uuid: String = UuidGenerator.newUuid(),
+    val serverId: String? = null,
+    val deviceId: String? = null,
+    val syncStatus: String = SyncStatus.PENDING,
+    val lastSyncedAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val deletedAt: Long? = null

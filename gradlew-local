@@ -1,0 +1,34 @@
+#!/bin/sh
+
+set -eu
+
+PROJECT_DIR="$(CDPATH= cd -- "$(dirname "$0")" && pwd)"
+JDK17_HOME="$PROJECT_DIR/.tooling/jdk-17.0.19+10/Contents/Home"
+JDK21_HOME="$PROJECT_DIR/.tooling/jdk-21.0.11+10/Contents/Home"
+SDK_HOME="${ANDROID_SDK_ROOT:-/Users/fiyyalisanna/Library/Android/sdk}"
+
+if [ ! -x "$JDK21_HOME/bin/java" ]; then
+  echo "JDK 21 tidak ditemukan di $JDK21_HOME" >&2
+  exit 1
+fi
+
+if [ ! -x "$JDK17_HOME/bin/java" ]; then
+  echo "JDK 17 tidak ditemukan di $JDK17_HOME" >&2
+  exit 1
+fi
+
+if [ ! -d "$SDK_HOME" ]; then
+  echo "Android SDK tidak ditemukan di $SDK_HOME" >&2
+  exit 1
+fi
+
+export JAVA_HOME="$JDK21_HOME"
+export ANDROID_SDK_ROOT="$SDK_HOME"
+export ANDROID_HOME="$SDK_HOME"
+
+JAVA_INSTALLATIONS="$JDK17_HOME,$JDK21_HOME"
+
+exec "$PROJECT_DIR/gradlew" \
+  -Dorg.gradle.java.installations.auto-download=false \
+  -Dorg.gradle.java.installations.paths="$JAVA_INSTALLATIONS" \
+  "$@"

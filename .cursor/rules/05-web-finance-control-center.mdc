@@ -1,0 +1,30 @@
+---
+description: Web dashboard advanced finance operation rules
+globs: web/**/*.ts,web/**/*.tsx,frontend/**/*.ts,frontend/**/*.tsx,app/**/*.tsx
+alwaysApply: false
+---
+
+# Web Finance Control Center
+
+Web is not only a viewer.
+
+Required modules:
+- Dashboard
+- Project
+- Saldo Project
+- Transaction
+- Approval Center
+- Reconciliation
+- Settlement PIC
+- Transfer
+- Budget
+- Reports
+- Sync Monitor
+- Audit Trail
+- User Management
+- Device Management
+- Project Assignment
+
+Approved transaction cannot be edited directly.
+Use correction or void.
+Dangerous actions require reason, confirmation, permission, and audit log.

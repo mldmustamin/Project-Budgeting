@@ -5,6 +5,7 @@ import com.example.fundsmanager.data.local.AppDatabase
 import com.example.fundsmanager.data.local.dao.*
 import com.example.fundsmanager.data.local.entity.AuditLogEntity
 import com.example.fundsmanager.data.local.entity.ProjectEntity
+import com.example.fundsmanager.data.local.entity.TransactionEntity
 import com.example.fundsmanager.data.local.entity.AccountEntity
 import com.example.fundsmanager.data.mapper.*
 import com.example.fundsmanager.domain.model.*
@@ -15,6 +16,7 @@ import javax.inject.Inject
 
 class FundsRepositoryImpl @Inject constructor(
     private val database: AppDatabase,
+    private val userDao: UserDao,
     private val projectDao: ProjectDao,
     private val transactionDao: TransactionDao,
     private val accountDao: AccountDao,
@@ -154,7 +156,12 @@ class FundsRepositoryImpl @Inject constructor(
 
     override suspend fun insertTransactions(transactions: List<Transaction>) {
         database.withTransaction {
-            val insertedIds = transactionDao.insertTransactions(transactions.map { it.toEntity() })
+            val entities = buildList {
+                for (tx in transactions) {
+                    add(resolveTransactionEntity(tx))
+                }
+            }
+            val insertedIds = transactionDao.insertTransactions(entities)
             transactions.zip(insertedIds).forEach { (transaction, id) ->
                 if (id > 0) {
                     val inserted = transaction.copy(id = id)
@@ -172,7 +179,7 @@ class FundsRepositoryImpl @Inject constructor(
 
     override suspend fun insertTransaction(transaction: Transaction): Long {
         return database.withTransaction {
-            val id = transactionDao.insertTransaction(transaction.toEntity())
+            val id = transactionDao.insertTransaction(resolveTransactionEntity(transaction))
             if (id > 0) {
                 insertAuditLog(
                     userId = transaction.userId,
@@ -189,7 +196,7 @@ class FundsRepositoryImpl @Inject constructor(
     override suspend fun updateTransaction(transaction: Transaction) {
         database.withTransaction {
             val old = transactionDao.getTransactionById(transaction.id)
-            transactionDao.updateTransaction(transaction.toEntity())
+            transactionDao.updateTransaction(resolveTransactionEntity(transaction))
             insertAuditLog(
                 userId = transaction.userId,
                 entityType = ENTITY_TRANSACTION,
@@ -351,6 +358,13 @@ class FundsRepositoryImpl @Inject constructor(
 
     private fun String.escapeJson(): String {
         return replace("\\", "\\\\").replace("\"", "\\\"")
+    }
+
+    private suspend fun resolveTransactionEntity(transaction: Transaction): TransactionEntity {
+        return transaction.toEntity(
+            resolvedProjectUuid = projectDao.getProjectById(transaction.projectId)?.uuid,
+            resolvedUserUuid = userDao.getUserById(transaction.userId)?.uuid
+        )
     }
 
     private companion object {

@@ -1,0 +1,27 @@
+---
+description: Android multi-user local-first requirements
+globs: app/src/main/java/com/example/fundsmanager/**/*.kt
+alwaysApply: false
+---
+
+# Android Multi-User Local-First
+
+Android will be used by many field engineers.
+
+Required:
+- active session
+- switch user
+- logout without deleting pending sync
+- project assignment cache
+- permission snapshot
+- sync outbox per user
+- audit log per user/device/session
+
+Every local operation must include:
+- localUserId
+- serverUserId
+- userUuid
+- deviceId
+- sessionId
+
+Never send User A outbox as User B.
