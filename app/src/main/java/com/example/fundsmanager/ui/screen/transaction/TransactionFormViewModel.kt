@@ -5,9 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fundsmanager.domain.model.Attachment
 import com.example.fundsmanager.domain.model.Transaction
+import com.example.fundsmanager.data.local.SessionManager
 import com.example.fundsmanager.domain.model.TransactionType
 import com.example.fundsmanager.domain.model.requiresRealAmountInput
-import com.example.fundsmanager.data.local.UserPreferencesRepository
 import com.example.fundsmanager.domain.repository.FundsRepository
 import com.example.fundsmanager.domain.service.FileStorageService
 import com.example.fundsmanager.domain.usecase.TransactionValidationResult
@@ -28,7 +28,7 @@ class TransactionFormViewModel @Inject constructor(
     private val repository: FundsRepository,
     private val fileStorageService: FileStorageService,
     private val validateTransactionUseCase: ValidateTransactionUseCase,
-    private val userPreferencesRepository: UserPreferencesRepository,
+    private val sessionManager: SessionManager,
     private val appLogger: AppLogger
 ) : ViewModel() {
 
@@ -223,7 +223,7 @@ class TransactionFormViewModel @Inject constructor(
         )
         viewModelScope.launch {
             try {
-                val userId = userPreferencesRepository.activeUserId.first() ?: 1L
+                val userId = sessionManager.activeSession.first()?.userId ?: 1L
                 val state = _uiState.value
                 val reported = state.reportedAmount.toLongOrNull() ?: 0L
                 val real = state.realAmount.toLongOrNull() ?: reported

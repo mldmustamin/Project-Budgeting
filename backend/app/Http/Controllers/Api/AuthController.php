@@ -14,21 +14,23 @@ class AuthController extends Controller
     public function login(Request $request): JsonResponse
     {
         $request->validate([
-            'email' => 'required|email',
+            'login' => 'required|string',
             'password' => 'required|string',
             'device_id' => 'nullable|string|max:255',
             'device_name' => 'nullable|string|max:255',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $login = $request->login;
+        $field = filter_var($login, FILTER_VALIDATE_EMAIL) ? 'email' : (is_numeric($login) ? 'employee_id' : 'email');
+
+        $user = User::where($field, $login)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
+                'login' => ['ID karyawan/email atau password tidak cocok.'],
             ]);
         }
 
-        // Sanctum token — plainTextToken returned once
         $tokenName = $request->device_name ?? $request->device_id ?? 'mobile';
         $token = $user->createToken($tokenName);
 
@@ -37,6 +39,19 @@ class AuthController extends Controller
             'access_token' => $token->plainTextToken,
             'token_type' => 'Bearer',
         ]);
+    }
+
+    private function userResponse(User $user): array
+    {
+        return [
+            'id' => $user->id,
+            'uuid' => $user->uuid,
+            'name' => $user->name,
+            'email' => $user->email,
+            'employee_id' => $user->employee_id,
+            'password_change_required' => $user->password_change_required,
+            'roles' => $user->getRoleNames()->values()->toArray(),
+        ];
     }
 
     public function me(Request $request): JsonResponse
@@ -55,14 +70,4 @@ class AuthController extends Controller
         ]);
     }
 
-    private function userResponse(User $user): array
-    {
-        return [
-            'id' => $user->id,
-            'uuid' => $user->uuid,
-            'name' => $user->name,
-            'email' => $user->email,
-            'roles' => $user->getRoleNames()->values()->toArray(),
-        ];
-    }
 }

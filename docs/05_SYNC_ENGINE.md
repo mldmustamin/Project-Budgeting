@@ -53,7 +53,7 @@ Server stores processed keys with TTL ≥ 30 days. Duplicate POST with same key 
 
 ## Pull Sync
 
-**Endpoint (planned):** `GET /sync/changes?since={cursor}&projectUuids=...`
+**Endpoint:** `GET /api/v1/sync/changes?since={cursor}` — implemented with cursor filtering and assignment scoping.
 
 **Merge rule:**
 ```
@@ -127,9 +127,9 @@ Display:
 | Server-side `projects`, `users`, `devices` tables | ✅ All migrated with UUID columns |
 | Sanctum auth (login/logout/me) | ✅ 4 tests passing |
 | RBAC (Spatie roles seeded) | ✅ 8 roles: OWNER, ADMIN, FINANCE_MANAGER, SUPERVISOR, PIC, FIELD_ENGINEER, AUDITOR, VIEWER |
-| Idempotency handling on server | ✅ `POST /api/v1/sync/push` implemented with idempotency via `legacy_hash`, device validation, project assignment enforcement |
+| Idempotency handling on server | ✅ `POST /api/v1/sync/push` implemented for transaction CREATE, UPDATE, and SOFT_DELETE with idempotency via `sync_outboxes.idempotency_key`, device validation, and project assignment enforcement |
 | Android outbox enqueue | ⏳ Phase 3 — Room entity + worker not yet implemented |
-| Pull sync endpoint (`GET /sync/changes`) | ⏳ Phase 5 — not yet implemented |
+| Pull sync endpoint (`GET /api/v1/sync/changes`) | ✅ Implemented with cursor + assignment scoping |
 | Attachment upload queue (separate) | ⏳ Phase 5 — not yet implemented |
 | Sync monitor UI | ⏳ Phase 6 — web dashboard |
 

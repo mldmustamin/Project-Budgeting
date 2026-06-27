@@ -18,6 +18,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'employee_id',
+        'password_change_required',
         'uuid',
         'server_id',
         'sync_status',
@@ -34,6 +36,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'password_change_required' => 'boolean',
             'last_synced_at' => 'datetime',
         ];
     }

@@ -2,7 +2,7 @@ package com.example.fundsmanager.ui.screen.project
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.fundsmanager.data.local.UserPreferencesRepository
+import com.example.fundsmanager.data.local.SessionManager
 import com.example.fundsmanager.domain.model.Project
 import com.example.fundsmanager.domain.model.ProjectSummary
 import com.example.fundsmanager.domain.model.Transaction
@@ -39,7 +39,7 @@ data class ProjectListUiState(
 @HiltViewModel
 class ProjectListViewModel @Inject constructor(
     private val repository: FundsRepository,
-    private val userPreferencesRepository: UserPreferencesRepository,
+    private val sessionManager: SessionManager,
     private val appLogger: AppLogger
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ProjectListUiState())
@@ -54,7 +54,8 @@ class ProjectListViewModel @Inject constructor(
     fun addProject(name: String, startDate: String?, completedDate: String?) {
         viewModelScope.launch {
             try {
-                val userId = userPreferencesRepository.activeUserId.first() ?: 1L
+                val session = sessionManager.activeSession.first()
+                val userId = session?.userId ?: 1L
                 _uiState.update { it.copy(error = null) }
                 val startAt = parseDateOrNull(startDate) ?: System.currentTimeMillis()
                 val completedAt = parseDateOrNull(completedDate)

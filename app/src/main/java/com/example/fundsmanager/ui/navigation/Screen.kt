@@ -1,6 +1,8 @@
 package com.example.fundsmanager.ui.navigation
 
 sealed class Screen(val route: String) {
+    object Login : Screen("login")
+    object PasswordChange : Screen("password_change")
     object ProjectList : Screen("project_list")
     object GlobalTransactionList : Screen("transaction_home")
     object Dashboard : Screen("dashboard")

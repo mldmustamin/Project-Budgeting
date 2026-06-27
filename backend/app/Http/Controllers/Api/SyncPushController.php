@@ -9,6 +9,7 @@ use App\Models\Project;
 use App\Models\ProjectAssignment;
 use App\Models\SyncOutbox;
 use App\Models\Transaction;
+use App\Services\PeriodGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -18,7 +19,7 @@ class SyncPushController extends Controller
 {
     private const MAX_BATCH_SIZE = 50;
     private const SUPPORTED_ENTITY_TYPES = ['transaction'];
-    private const SUPPORTED_OPERATIONS = ['CREATE'];
+    private const SUPPORTED_OPERATIONS = ['CREATE', 'UPDATE', 'SOFT_DELETE'];
 
     public function push(Request $request): JsonResponse
     {
@@ -93,12 +94,37 @@ class SyncPushController extends Controller
             ];
         }
 
+        // Dispatch to operation-specific handler
+        return match ($opType) {
+            'CREATE' => $this->processCreate($idempotencyKey, $entityUuid, $operation, $user, $device),
+            'UPDATE' => $this->processUpdate($idempotencyKey, $entityUuid, $operation, $user, $device),
+            'SOFT_DELETE' => $this->processSoftDelete($idempotencyKey, $entityUuid, $operation, $user, $device),
+            default => $this->rejectedResult($idempotencyKey, $entityUuid, 'Unsupported operation: ' . $opType),
+        };
+    }
+
+    private function processCreate(
+        string $idempotencyKey,
+        string $entityUuid,
+        array $operation,
+        $user,
+        Device $device
+    ): array {
         // Validate payload
         try {
-            $payload = $operation['payload'];
+            $payload = $operation['payload'] ?? [];
             $this->validateTransactionPayload($payload);
         } catch (ValidationException $e) {
             $reason = 'Validation failed: ' . implode(', ', array_keys($e->errors()));
+            $this->writeOutbox($operation, $user, $device, 'REJECTED', $reason);
+            return $this->rejectedResult($idempotencyKey, $entityUuid, $reason);
+        }
+
+        // Period guard: reject if date falls in closed period
+        try {
+            PeriodGuard::guard($payload['date']);
+        } catch (ValidationException $e) {
+            $reason = $e->errors()['date'][0];
             $this->writeOutbox($operation, $user, $device, 'REJECTED', $reason);
             return $this->rejectedResult($idempotencyKey, $entityUuid, $reason);
         }
@@ -112,11 +138,7 @@ class SyncPushController extends Controller
         }
 
         // Check project assignment (skip for OWNER/ADMIN)
-        $assignment = ProjectAssignment::where('project_id', $project->id)
-            ->where('user_id', $user->id)
-            ->first();
-
-        if (! $assignment && ! $user->hasRole(['OWNER', 'ADMIN'])) {
+        if (! $this->isAssignedOrAdmin($user, $project->id)) {
             $reason = 'User not assigned to this project.';
             $this->writeOutbox($operation, $user, $device, 'REJECTED', $reason);
             return $this->rejectedResult($idempotencyKey, $entityUuid, $reason);
@@ -167,6 +189,192 @@ class SyncPushController extends Controller
         ];
     }
 
+    private function processUpdate(
+        string $idempotencyKey,
+        string $entityUuid,
+        array $operation,
+        $user,
+        Device $device
+    ): array {
+        // Resolve existing transaction
+        $transaction = Transaction::where('uuid', $entityUuid)->first();
+        if (! $transaction) {
+            $reason = 'Transaction not found.';
+            $this->writeOutbox($operation, $user, $device, 'REJECTED', $reason);
+            return $this->rejectedResult($idempotencyKey, $entityUuid, $reason);
+        }
+
+        // Check project assignment on the transaction's project
+        if (! $this->isAssignedOrAdmin($user, $transaction->project_id)) {
+            $reason = 'User not assigned to this project.';
+            $this->writeOutbox($operation, $user, $device, 'REJECTED', $reason);
+            return $this->rejectedResult($idempotencyKey, $entityUuid, $reason);
+        }
+
+        // Reject update of APPROVED transactions (must use correction)
+        if ($transaction->approval_status === Transaction::APPROVAL_APPROVED) {
+            $reason = 'Approved transactions cannot be updated. Use correction or void.';
+            $this->writeOutbox($operation, $user, $device, 'REJECTED', $reason);
+            return $this->rejectedResult($idempotencyKey, $entityUuid, $reason);
+        }
+
+        // Validate payload
+        try {
+            $payload = $operation['payload'] ?? [];
+            $this->validateTransactionPayload($payload);
+        } catch (ValidationException $e) {
+            $reason = 'Validation failed: ' . implode(', ', array_keys($e->errors()));
+            $this->writeOutbox($operation, $user, $device, 'REJECTED', $reason);
+            return $this->rejectedResult($idempotencyKey, $entityUuid, $reason);
+        }
+
+        // Resolve new project
+        $project = Project::where('uuid', $payload['project_uuid'])->first();
+        if (! $project) {
+            $reason = 'Project not found.';
+            $this->writeOutbox($operation, $user, $device, 'REJECTED', $reason);
+            return $this->rejectedResult($idempotencyKey, $entityUuid, $reason);
+        }
+
+        // Check project assignment on new project
+        if (! $this->isAssignedOrAdmin($user, $project->id)) {
+            $reason = 'User not assigned to this project.';
+            $this->writeOutbox($operation, $user, $device, 'REJECTED', $reason);
+            return $this->rejectedResult($idempotencyKey, $entityUuid, $reason);
+        }
+
+        // Period guard: reject if new date falls in closed period
+        try {
+            PeriodGuard::guard($payload['date']);
+        } catch (ValidationException $e) {
+            $reason = $e->errors()['date'][0];
+            $this->writeOutbox($operation, $user, $device, 'REJECTED', $reason);
+            return $this->rejectedResult($idempotencyKey, $entityUuid, $reason);
+        }
+
+        $oldValue = $transaction->toArray();
+
+        // Update allowed fields only
+        $transaction->update([
+            'project_id' => $project->id,
+            'project_uuid' => $project->uuid,
+            'type' => $payload['type'],
+            'date' => $payload['date'],
+            'description' => $payload['description'] ?? '',
+            'reported_amount' => $payload['reported_amount'],
+            'real_amount' => $payload['real_amount'],
+            'account_id' => $payload['account_id'] ?? null,
+            'category_id' => $payload['category_id'] ?? null,
+            'note' => $payload['note'] ?? null,
+            'source_text' => $payload['source_text'] ?? null,
+            'device_id' => $device->uuid,
+            'sync_status' => 'SYNCED',
+            'last_synced_at' => now(),
+        ]);
+
+        // Write sync_outboxes row
+        $this->writeOutbox($operation, $user, $device, 'SYNCED', null);
+
+        // Create audit event
+        AuditEvent::create([
+            'user_id' => $user->id,
+            'entity_type' => 'transaction',
+            'entity_uuid' => $transaction->uuid,
+            'action' => 'sync_update',
+            'old_value' => $oldValue,
+            'new_value' => $transaction->fresh()->toArray(),
+            'device_id' => $device->uuid,
+            'session_id' => $idempotencyKey,
+        ]);
+
+        return [
+            'idempotency_key' => $idempotencyKey,
+            'entity_uuid' => $transaction->uuid,
+            'status' => 'ACCEPTED',
+            'server_id' => (string) $transaction->id,
+            'reason' => null,
+        ];
+    }
+
+    private function processSoftDelete(
+        string $idempotencyKey,
+        string $entityUuid,
+        array $operation,
+        $user,
+        Device $device
+    ): array {
+        // Resolve existing transaction
+        $transaction = Transaction::where('uuid', $entityUuid)->first();
+        if (! $transaction) {
+            $reason = 'Transaction not found.';
+            $this->writeOutbox($operation, $user, $device, 'REJECTED', $reason);
+            return $this->rejectedResult($idempotencyKey, $entityUuid, $reason);
+        }
+
+        // Check project assignment on the transaction's project
+        if (! $this->isAssignedOrAdmin($user, $transaction->project_id)) {
+            $reason = 'User not assigned to this project.';
+            $this->writeOutbox($operation, $user, $device, 'REJECTED', $reason);
+            return $this->rejectedResult($idempotencyKey, $entityUuid, $reason);
+        }
+
+        // Period guard: reject if transaction date falls in closed period
+        try {
+            PeriodGuard::guard($transaction->date->format('Y-m-d'));
+        } catch (ValidationException $e) {
+            $reason = $e->errors()['date'][0];
+            $this->writeOutbox($operation, $user, $device, 'REJECTED', $reason);
+            return $this->rejectedResult($idempotencyKey, $entityUuid, $reason);
+        }
+
+        $oldValue = $transaction->toArray();
+        $serverId = (string) $transaction->id;
+
+        // Mark sync fields before soft delete
+        $transaction->update([
+            'sync_status' => 'SYNCED',
+            'last_synced_at' => now(),
+            'device_id' => $device->uuid,
+        ]);
+
+        // Soft delete
+        $transaction->delete();
+
+        // Write sync_outboxes row
+        $this->writeOutbox($operation, $user, $device, 'SYNCED', null);
+
+        // Create audit event
+        AuditEvent::create([
+            'user_id' => $user->id,
+            'entity_type' => 'transaction',
+            'entity_uuid' => $entityUuid,
+            'action' => 'sync_soft_delete',
+            'old_value' => $oldValue,
+            'new_value' => null,
+            'device_id' => $device->uuid,
+            'session_id' => $idempotencyKey,
+        ]);
+
+        return [
+            'idempotency_key' => $idempotencyKey,
+            'entity_uuid' => $entityUuid,
+            'status' => 'ACCEPTED',
+            'server_id' => $serverId,
+            'reason' => null,
+        ];
+    }
+
+    private function isAssignedOrAdmin($user, int $projectId): bool
+    {
+        if ($user->hasRole(['OWNER', 'ADMIN'])) {
+            return true;
+        }
+
+        return ProjectAssignment::where('project_id', $projectId)
+            ->where('user_id', $user->id)
+            ->exists();
+    }
+
     private function rejectedResult(string $idempotencyKey, string $entityUuid, string $reason): array
     {
         return [
@@ -188,7 +396,7 @@ class SyncPushController extends Controller
             'entity_type' => $operation['entity_type'],
             'entity_uuid' => $operation['entity_uuid'],
             'operation' => $operation['operation'],
-            'payload' => $operation['payload'],
+            'payload' => $operation['payload'] ?? [],
             'idempotency_key' => $operation['idempotency_key'],
             'status' => $status,
             'rejection_reason' => $reason,

@@ -86,13 +86,45 @@ object DatabaseMigrations {
         }
     }
 
+    val MIGRATION_7_8 = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                CREATE TABLE IF NOT EXISTS sync_outbox (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    uuid TEXT NOT NULL,
+                    localUserId INTEGER NOT NULL,
+                    serverUserId TEXT,
+                    userUuid TEXT,
+                    deviceId TEXT,
+                    sessionId TEXT,
+                    entityType TEXT NOT NULL,
+                    entityUuid TEXT NOT NULL,
+                    operation TEXT NOT NULL,
+                    payloadJson TEXT NOT NULL,
+                    idempotencyKey TEXT NOT NULL,
+                    status TEXT NOT NULL DEFAULT 'PENDING',
+                    retryCount INTEGER NOT NULL DEFAULT 0,
+                    lastError TEXT,
+                    createdAt INTEGER NOT NULL,
+                    updatedAt INTEGER NOT NULL
+                )
+                """.trimIndent()
+            )
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_sync_outbox_idempotencyKey ON sync_outbox(idempotencyKey)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_sync_outbox_status ON sync_outbox(status)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_sync_outbox_localUserId_deviceId_sessionId ON sync_outbox(localUserId, deviceId, sessionId)")
+        }
+    }
+
     val ALL = arrayOf(
         MIGRATION_1_2,
         MIGRATION_2_3,
         MIGRATION_3_4,
         MIGRATION_4_5,
         MIGRATION_5_6,
-        MIGRATION_6_7
+        MIGRATION_6_7,
+        MIGRATION_7_8
     )
 
     internal fun backfillUuids(db: SupportSQLiteDatabase, table: String) {

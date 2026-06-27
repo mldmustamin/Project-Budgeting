@@ -23,6 +23,7 @@ class Transaction extends Model
     const APPROVAL_PENDING = 'PENDING';
     const APPROVAL_APPROVED = 'APPROVED';
     const APPROVAL_REJECTED = 'REJECTED';
+    const APPROVAL_DISPUTED = 'DISPUTED';
 
     // Finance statuses
     const FINANCE_ACTIVE = 'ACTIVE';
@@ -43,6 +44,8 @@ class Transaction extends Model
         'source_text', 'note', 'legacy_hash', 'server_id', 'device_id',
         'sync_status', 'approval_status', 'finance_status', 'session_id',
         'server_user_id', 'user_uuid', 'project_uuid', 'last_synced_at',
+        'disputed_amount', 'dispute_reason', 'dispute_response',
+        'disputed_by', 'disputed_at', 'dispute_resolved_by', 'dispute_resolved_at',
     ];
 
     protected function casts(): array
@@ -52,6 +55,8 @@ class Transaction extends Model
             'reported_amount' => 'integer',
             'real_amount' => 'integer',
             'last_synced_at' => 'datetime',
+            'disputed_at' => 'datetime',
+            'dispute_resolved_at' => 'datetime',
         ];
     }
 

@@ -74,7 +74,7 @@
 | 2 | Multi-user session + no hardcoded userId=1 |
 | 3 | Outbox enqueue + mock sync test |
 | 4 | Server auth + project CRUD + assignment + device API (login/logout/me ✅, project CRUD ✅, assignments ✅, device register ✅) |
-| 5 | End-to-end push/pull one transaction |
+| 5 | End-to-end transaction sync (push CREATE/UPDATE/SOFT_DELETE ✅, pull ✅, status ✅) |
 | 6 | Web login + transaction list + approval MVP |
 | 7 | Correction/void/closing on web |
 | 8 | Full backup/restore roundtrip |

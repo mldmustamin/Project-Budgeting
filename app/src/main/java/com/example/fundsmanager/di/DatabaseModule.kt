@@ -111,4 +111,7 @@ object DatabaseModule {
 
     @Provides
     fun provideAuditLogDao(db: AppDatabase): AuditLogDao = db.auditLogDao()
+
+    @Provides
+    fun provideSyncOutboxDao(db: AppDatabase): SyncOutboxDao = db.syncOutboxDao()
 }

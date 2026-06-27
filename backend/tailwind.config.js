@@ -12,7 +12,21 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+                sans: ['Inter', 'Figtree', ...defaultTheme.fontFamily.sans],
+            },
+            colors: {
+                brand: {
+                    50:  '#e9f5ed',
+                    100: '#c8e6d1',
+                    200: '#a3d4b0',
+                    300: '#7cc28c',
+                    400: '#5eb472',
+                    500: '#45a75d',
+                    600: '#238b45',
+                    700: '#1e7a3c',
+                    800: '#196933',
+                    900: '#125226',
+                },
             },
         },
     },

@@ -43,6 +43,91 @@ Manual APK sideload. Play Store not configured.
 - **Artisan commands:** `php artisan migrate:fresh --seed` for new DB, `php artisan horizon:install` for queues
 - **Scheduler:** Laravel Scheduler for periodic sync maintenance (cron `* * * * * cd /path && php artisan schedule:run >> /dev/null 2>&1`)
 
+### Staging Deploy Procedure
+
+```bash
+# 1. Clone & setup
+git clone <repo-url> && cd backend
+cp .env.example .env    # configure DB, Redis, S3 in .env
+
+# 2. Dependencies
+composer install --no-dev --optimize-autoloader
+
+# 3. Generate key
+php artisan key:generate
+
+# 4. Database
+php artisan migrate --force
+php artisan db:seed --class=StagingSeeder
+
+# 5. Optimize
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+
+# 6. Storage link
+php artisan storage:link
+
+# 7. Horizon (queue worker)
+php artisan horizon
+# Production: supervise with systemd or supervisord
+```
+
+### Staging `.env` template
+
+```env
+APP_NAME="FundsManager Staging"
+APP_ENV=staging
+APP_DEBUG=false
+APP_URL=https://staging.fundmanager.example.com
+
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=fundsmanager_staging
+DB_USERNAME=fundsmanager
+DB_PASSWORD=<secret>
+
+REDIS_HOST=127.0.0.1
+QUEUE_CONNECTION=redis
+CACHE_STORE=redis
+SESSION_DRIVER=redis
+
+FILESYSTEM_DISK=s3
+AWS_ACCESS_KEY_ID=<key>
+AWS_SECRET_ACCESS_KEY=<secret>
+AWS_DEFAULT_REGION=us-east-1
+AWS_BUCKET=fundsmanager-staging
+
+HORIZON_NAME="FundsManager Staging"
+TELESCOPE_ENABLED=false
+LOG_LEVEL=warning
+```
+
+### Staging Smoke Test
+
+```bash
+# API smoke
+curl -X POST https://staging.fundmanager.example.com/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"admin@fundsmanager.test","password":"password123"}'
+
+# Verify Horizon (admin only)
+curl -u admin:password https://staging.fundmanager.example.com/horizon
+
+# Run tests against staging
+DB_CONNECTION=sqlite DB_DATABASE=:memory: php artisan test
+```
+
+### Rollback
+
+```bash
+php artisan migrate:rollback --step=1   # rollback last migration
+git checkout <previous-tag>              # revert code
+php artisan config:clear
+php artisan horizon:terminate           # restart workers
+```
+
 ---
 
 ## Web Deployment (Laravel Blade + Livewire — `backend/` scaffolded)

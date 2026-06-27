@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Project;
 use App\Models\ProjectAssignment;
+use App\Models\Transaction;
+use App\Services\TransactionSummaryService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -120,6 +122,49 @@ class ProjectController extends Controller
                 'created_at' => $assignment->created_at,
             ],
         ], 201);
+    }
+
+    // ─── Summary & Export ────────────────────────────────────────────────
+
+    public function summary(Project $project): JsonResponse
+    {
+        $transactions = Transaction::where('project_id', $project->id)->get();
+        $service = new TransactionSummaryService();
+        $summary = $service->calculate($transactions);
+
+        $summary['transaction_count'] = $transactions->whereNull('deleted_at')->count();
+        $summary['project_uuid'] = $project->uuid;
+        $summary['project_name'] = $project->name;
+
+        return response()->json(['summary' => $summary]);
+    }
+
+    public function export(Project $project): JsonResponse
+    {
+        $transactions = Transaction::where('project_id', $project->id)
+            ->whereNull('deleted_at')
+            ->orderByDesc('date')
+            ->orderByDesc('id')
+            ->get(['uuid', 'type', 'date', 'description', 'reported_amount', 'real_amount',
+                   'approval_status', 'finance_status', 'created_at']);
+
+        $service = new TransactionSummaryService();
+        $summary = $service->calculate($transactions);
+
+        return response()->json([
+            'project' => ['uuid' => $project->uuid, 'name' => $project->name],
+            'summary' => $summary,
+            'transactions' => $transactions->map(fn ($tx) => [
+                'uuid' => $tx->uuid,
+                'type' => $tx->type,
+                'date' => $tx->date?->format('Y-m-d'),
+                'description' => $tx->description,
+                'reported_amount' => $tx->reported_amount,
+                'real_amount' => $tx->real_amount,
+                'approval_status' => $tx->approval_status,
+                'finance_status' => $tx->finance_status,
+            ]),
+        ]);
     }
 
     private function authorizeCreate(Request $request): void

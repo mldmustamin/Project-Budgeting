@@ -23,14 +23,14 @@ class AuthTest extends TestCase
         $user->assignRole('FIELD_ENGINEER');
 
         $response = $this->postJson('/api/v1/auth/login', [
-            'email' => $user->email,
+            'login' => $user->email,
             'password' => 'password',
             'device_name' => 'android-test',
         ]);
 
         $response->assertStatus(200)
             ->assertJsonStructure([
-                'user' => ['id', 'uuid', 'name', 'email', 'roles'],
+                'user' => ['id', 'uuid', 'name', 'email', 'employee_id', 'password_change_required', 'roles'],
                 'access_token',
                 'token_type',
             ])
@@ -41,12 +41,12 @@ class AuthTest extends TestCase
     public function test_login_with_invalid_credentials_returns_422(): void
     {
         $response = $this->postJson('/api/v1/auth/login', [
-            'email' => 'nonexistent@example.com',
+            'login' => 'nonexistent@example.com',
             'password' => 'wrong',
         ]);
 
         $response->assertStatus(422)
-            ->assertJsonValidationErrors(['email']);
+            ->assertJsonValidationErrors(['login']);
     }
 
     public function test_me_returns_authenticated_user_with_roles(): void
