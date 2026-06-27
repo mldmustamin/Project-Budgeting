@@ -1,26 +1,36 @@
 package com.example.fundsmanager.data.repository
 
 import androidx.room.withTransaction
+import com.example.fundsmanager.data.local.ActiveSession
 import com.example.fundsmanager.data.local.AppDatabase
+import com.example.fundsmanager.data.local.SessionManager
 import com.example.fundsmanager.data.local.dao.*
+import com.example.fundsmanager.data.sync.SyncOutboxRepository
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import com.example.fundsmanager.data.local.entity.AuditLogEntity
 import com.example.fundsmanager.data.local.entity.ProjectEntity
+import com.example.fundsmanager.data.local.entity.TransactionEntity
 import com.example.fundsmanager.data.local.entity.AccountEntity
 import com.example.fundsmanager.data.mapper.*
 import com.example.fundsmanager.domain.model.*
 import com.example.fundsmanager.domain.repository.FundsRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class FundsRepositoryImpl @Inject constructor(
     private val database: AppDatabase,
+    private val userDao: UserDao,
     private val projectDao: ProjectDao,
     private val transactionDao: TransactionDao,
     private val accountDao: AccountDao,
     private val categoryDao: CategoryDao,
     private val attachmentDao: AttachmentDao,
-    private val auditLogDao: AuditLogDao
+    private val auditLogDao: AuditLogDao,
+    private val syncOutboxRepository: SyncOutboxRepository,
+    private val sessionManager: SessionManager
 ) : FundsRepository {
 
     override suspend fun getProjectById(id: Long): Project? {
@@ -154,7 +164,12 @@ class FundsRepositoryImpl @Inject constructor(
 
     override suspend fun insertTransactions(transactions: List<Transaction>) {
         database.withTransaction {
-            val insertedIds = transactionDao.insertTransactions(transactions.map { it.toEntity() })
+            val entities = buildList {
+                for (tx in transactions) {
+                    add(resolveTransactionEntity(tx))
+                }
+            }
+            val insertedIds = transactionDao.insertTransactions(entities)
             transactions.zip(insertedIds).forEach { (transaction, id) ->
                 if (id > 0) {
                     val inserted = transaction.copy(id = id)
@@ -172,7 +187,7 @@ class FundsRepositoryImpl @Inject constructor(
 
     override suspend fun insertTransaction(transaction: Transaction): Long {
         return database.withTransaction {
-            val id = transactionDao.insertTransaction(transaction.toEntity())
+            val id = transactionDao.insertTransaction(resolveTransactionEntity(transaction))
             if (id > 0) {
                 insertAuditLog(
                     userId = transaction.userId,
@@ -183,13 +198,15 @@ class FundsRepositoryImpl @Inject constructor(
                 )
             }
             id
+        }.also { newId ->
+            if (newId > 0) enqueueOutbox(transaction.copy(id = newId), "CREATE")
         }
     }
 
     override suspend fun updateTransaction(transaction: Transaction) {
         database.withTransaction {
             val old = transactionDao.getTransactionById(transaction.id)
-            transactionDao.updateTransaction(transaction.toEntity())
+            transactionDao.updateTransaction(resolveTransactionEntity(transaction))
             insertAuditLog(
                 userId = transaction.userId,
                 entityType = ENTITY_TRANSACTION,
@@ -199,14 +216,17 @@ class FundsRepositoryImpl @Inject constructor(
                 newValueJson = transaction.toAuditJson()
             )
         }
+        enqueueOutbox(transaction, "UPDATE")
     }
 
     override suspend fun softDeleteTransaction(id: Long) {
+        var oldTransaction: Transaction? = null
         database.withTransaction {
             val old = transactionDao.getTransactionById(id)
             val deletedAt = System.currentTimeMillis()
             transactionDao.softDeleteTransaction(id, deletedAt)
             old?.let {
+                oldTransaction = it.toDomain()
                 insertAuditLog(
                     userId = it.userId,
                     entityType = ENTITY_TRANSACTION,
@@ -216,6 +236,29 @@ class FundsRepositoryImpl @Inject constructor(
                     newValueJson = it.toDomain().copy(deletedAt = deletedAt).toAuditJson()
                 )
             }
+        }
+        oldTransaction?.let { enqueueOutbox(it, "SOFT_DELETE") }
+    }
+
+    private fun enqueueOutbox(tx: Transaction, operation: String) {
+        val json = Json { ignoreUnknownKeys = true }
+        val payloadJson = json.encodeToString(tx.toAuditJson())
+        val session: ActiveSession? = kotlinx.coroutines.runBlocking {
+            try {
+                sessionManager.activeSession.first()
+            } catch (_: Exception) {
+                null
+            }
+        }
+        kotlinx.coroutines.runBlocking {
+            syncOutboxRepository.enqueue(
+                localUserId = tx.userId,
+                userUuid = session?.userUuid ?: tx.userUuid ?: "",
+                deviceId = session?.deviceUuid ?: tx.deviceId ?: "",
+                entityUuid = tx.uuid.ifBlank { "" },
+                operation = operation,
+                payloadJson = payloadJson
+            )
         }
     }
 
@@ -351,6 +394,13 @@ class FundsRepositoryImpl @Inject constructor(
 
     private fun String.escapeJson(): String {
         return replace("\\", "\\\\").replace("\"", "\\\"")
+    }
+
+    private suspend fun resolveTransactionEntity(transaction: Transaction): TransactionEntity {
+        return transaction.toEntity(
+            resolvedProjectUuid = projectDao.getProjectById(transaction.projectId)?.uuid,
+            resolvedUserUuid = userDao.getUserById(transaction.userId)?.uuid
+        )
     }
 
     private companion object {

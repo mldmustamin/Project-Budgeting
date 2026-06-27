@@ -11,5 +11,7 @@ enum class AppLogCategory {
     VALIDATION,
     UI,
     FILE,
+    AUTH,
+    SYNC,
     UNKNOWN
 }

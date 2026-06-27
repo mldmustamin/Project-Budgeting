@@ -4,6 +4,10 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.example.fundsmanager.data.local.ApprovalStatus
+import com.example.fundsmanager.data.local.FinanceStatus
+import com.example.fundsmanager.data.local.SyncStatus
+import com.example.fundsmanager.util.UuidGenerator
 
 @Entity(
     tableName = "transactions",
@@ -38,7 +42,10 @@ import androidx.room.PrimaryKey
         Index(value = ["projectId"]),
         Index(value = ["accountId"]),
         Index(value = ["categoryId"]),
-        Index(value = ["legacyHash"], unique = true)
+        Index(value = ["legacyHash"], unique = true),
+        Index(value = ["uuid"], unique = true),
+        Index(value = ["syncStatus"]),
+        Index(value = ["serverId"])
     ]
 )
 data class TransactionEntity(
@@ -56,6 +63,17 @@ data class TransactionEntity(
     val sourceText: String? = null,
     val note: String? = null,
     val legacyHash: String? = null,
+    val uuid: String = UuidGenerator.newUuid(),
+    val serverId: String? = null,
+    val deviceId: String? = null,
+    val syncStatus: String = SyncStatus.PENDING,
+    val approvalStatus: String = ApprovalStatus.DRAFT,
+    val financeStatus: String = FinanceStatus.ACTIVE,
+    val lastSyncedAt: Long? = null,
+    val sessionId: String? = null,
+    val serverUserId: String? = null,
+    val userUuid: String? = null,
+    val projectUuid: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val deletedAt: Long? = null

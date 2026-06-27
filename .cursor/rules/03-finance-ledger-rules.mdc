@@ -1,0 +1,20 @@
+---
+description: Finance calculation and ledger safety rules
+globs: app/src/main/java/com/example/fundsmanager/**/*.kt,backend/**/*.ts,backend/**/*.py,web/**/*.ts,web/**/*.tsx
+alwaysApply: false
+---
+
+# Finance Ledger Rules
+
+- Money must use Long/integer/BigInt, never Double/Float.
+- Existing formula must remain valid.
+- `CalculateProjectSummaryUseCase` remains Android summary SSOT.
+- Add calculation modes:
+  - LOCAL_VIEW
+  - FINAL_APPROVED
+  - PROJECTED
+- Approved transaction is immutable.
+- Correction creates a new transaction.
+- Void does not hard-delete.
+- Rejected and voided transactions are excluded from active balance.
+- Pending approval is pending impact, not final balance.

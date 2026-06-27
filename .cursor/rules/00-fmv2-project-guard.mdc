@@ -1,0 +1,25 @@
+---
+description: Always-on FundManager V2 project guardrails
+globs:
+alwaysApply: true
+---
+
+# FMv2 Project Guard
+
+- Folder ini adalah existing Android app. Jangan clone repo baru.
+- Android harus tetap local-first.
+- Android akan menjadi multi-user untuk banyak field engineer.
+- Jangan ubah Android menjadi online-only.
+- Jangan hapus Room.
+- Jangan ganti local `Long id` primary key menjadi UUID.
+- Tambahkan `uuid`, `serverId`, `deviceId`, `syncStatus`, `approvalStatus`, `financeStatus` secara additive.
+- Pertahankan `reportedAmount`, `realAmount`, `legacyHash`, `sourceText`, dan `deletedAt`.
+- Jangan gunakan `Double` atau `Float` untuk uang.
+- Jangan hard-delete transaksi keuangan.
+- Approved transaction immutable.
+- Gunakan correction atau void untuk perubahan transaksi approved.
+- Sync outbox harus scoped by user, device, dan session.
+- Jangan asumsi 1 device = 1 user.
+- Web dashboard adalah advanced finance control center, bukan viewer biasa.
+- Inspect active navigation sebelum edit UI Android.
+- Setiap task harus diakhiri dengan files changed, tests run, result, risks, dan next recommendation.

@@ -2,6 +2,7 @@ package com.example.fundsmanager.ui.screen.project
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.fundsmanager.data.local.SessionManager
 import com.example.fundsmanager.domain.model.Project
 import com.example.fundsmanager.domain.model.ProjectSummary
 import com.example.fundsmanager.domain.model.Transaction
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -37,6 +39,7 @@ data class ProjectListUiState(
 @HiltViewModel
 class ProjectListViewModel @Inject constructor(
     private val repository: FundsRepository,
+    private val sessionManager: SessionManager,
     private val appLogger: AppLogger
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ProjectListUiState())
@@ -48,9 +51,11 @@ class ProjectListViewModel @Inject constructor(
         observeProjects()
     }
 
-    fun addProject(name: String, startDate: String?, completedDate: String?, userId: Long = 1L) {
+    fun addProject(name: String, startDate: String?, completedDate: String?) {
         viewModelScope.launch {
             try {
+                val session = sessionManager.activeSession.first()
+                val userId = session?.userId ?: 1L
                 _uiState.update { it.copy(error = null) }
                 val startAt = parseDateOrNull(startDate) ?: System.currentTimeMillis()
                 val completedAt = parseDateOrNull(completedDate)

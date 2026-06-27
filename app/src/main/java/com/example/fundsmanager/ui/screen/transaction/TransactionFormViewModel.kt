@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fundsmanager.domain.model.Attachment
 import com.example.fundsmanager.domain.model.Transaction
+import com.example.fundsmanager.data.local.SessionManager
 import com.example.fundsmanager.domain.model.TransactionType
 import com.example.fundsmanager.domain.model.requiresRealAmountInput
 import com.example.fundsmanager.domain.repository.FundsRepository
@@ -27,6 +28,7 @@ class TransactionFormViewModel @Inject constructor(
     private val repository: FundsRepository,
     private val fileStorageService: FileStorageService,
     private val validateTransactionUseCase: ValidateTransactionUseCase,
+    private val sessionManager: SessionManager,
     private val appLogger: AppLogger
 ) : ViewModel() {
 
@@ -211,7 +213,7 @@ class TransactionFormViewModel @Inject constructor(
         _uiState.update { it.copy(selectedCategoryId = categoryId, error = null, duplicateWarning = null) }
     }
 
-    fun saveTransaction(userId: Long) {
+    fun saveTransaction() {
         appLogger.info(
             category = AppLogCategory.TRANSACTION,
             screen = "FormTransaksi",
@@ -221,6 +223,7 @@ class TransactionFormViewModel @Inject constructor(
         )
         viewModelScope.launch {
             try {
+                val userId = sessionManager.activeSession.first()?.userId ?: 1L
                 val state = _uiState.value
                 val reported = state.reportedAmount.toLongOrNull() ?: 0L
                 val real = state.realAmount.toLongOrNull() ?: reported
@@ -239,6 +242,17 @@ class TransactionFormViewModel @Inject constructor(
                     sourceText = existing?.sourceText,
                     note = state.note,
                     legacyHash = existing?.legacyHash,
+                    uuid = existing?.uuid ?: "",
+                    serverId = existing?.serverId,
+                    deviceId = existing?.deviceId,
+                    syncStatus = existing?.syncStatus ?: "PENDING",
+                    approvalStatus = existing?.approvalStatus ?: "DRAFT",
+                    financeStatus = existing?.financeStatus ?: "ACTIVE",
+                    lastSyncedAt = existing?.lastSyncedAt,
+                    sessionId = existing?.sessionId,
+                    serverUserId = existing?.serverUserId,
+                    userUuid = existing?.userUuid,
+                    projectUuid = existing?.projectUuid,
                     deletedAt = existing?.deletedAt
                 )
 

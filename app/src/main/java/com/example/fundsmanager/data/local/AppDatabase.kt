@@ -8,6 +8,7 @@ import com.example.fundsmanager.data.local.dao.AuditLogDao
 import com.example.fundsmanager.data.local.dao.AttachmentDao
 import com.example.fundsmanager.data.local.dao.CategoryDao
 import com.example.fundsmanager.data.local.dao.ProjectDao
+import com.example.fundsmanager.data.local.dao.SyncOutboxDao
 import com.example.fundsmanager.data.local.dao.TransactionDao
 import com.example.fundsmanager.data.local.dao.UserDao
 import com.example.fundsmanager.data.local.entity.AccountEntity
@@ -15,6 +16,7 @@ import com.example.fundsmanager.data.local.entity.AuditLogEntity
 import com.example.fundsmanager.data.local.entity.AttachmentEntity
 import com.example.fundsmanager.data.local.entity.CategoryEntity
 import com.example.fundsmanager.data.local.entity.ProjectEntity
+import com.example.fundsmanager.data.local.entity.SyncOutboxEntity
 import com.example.fundsmanager.data.local.entity.TransactionEntity
 import com.example.fundsmanager.data.local.entity.UserEntity
 
@@ -26,9 +28,10 @@ import com.example.fundsmanager.data.local.entity.UserEntity
         CategoryEntity::class,
         TransactionEntity::class,
         AttachmentEntity::class,
-        AuditLogEntity::class
+        AuditLogEntity::class,
+        SyncOutboxEntity::class
     ],
-    version = 6,
+    version = 8,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -40,4 +43,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun attachmentDao(): AttachmentDao
     abstract fun auditLogDao(): AuditLogDao
+    abstract fun syncOutboxDao(): SyncOutboxDao
 }

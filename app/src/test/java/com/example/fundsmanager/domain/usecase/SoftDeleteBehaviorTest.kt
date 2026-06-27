@@ -27,8 +27,8 @@ class SoftDeleteBehaviorTest {
     fun `ProjectSummary excludes soft-deleted transactions`() = runTest {
         val projectId = 1L
         val transactions = listOf(
-            Transaction(1, 1, 1, 1, null, TransactionType.FUND_IN, "2023-01-01", "F", 100, 100, null, null, null, null),
-            Transaction(2, 1, 1, 1, null, TransactionType.OFFICE_EXPENSE, "2023-01-01", "D", 50, 50, null, null, "h1", 12345L) // deleted
+            Transaction(1, 1, 1, 1, null, TransactionType.FUND_IN, "2023-01-01", "F", 100, 100, null, null, null, deletedAt = null),
+            Transaction(2, 1, 1, 1, null, TransactionType.OFFICE_EXPENSE, "2023-01-01", "D", 50, 50, null, null, "h1", deletedAt = 12345L)
         )
         
         `when`(repository.getProjectById(projectId)).thenReturn(Project(1, "P", null, false))

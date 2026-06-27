@@ -1,0 +1,20 @@
+---
+description: Existing Android compatibility rules
+globs: app/src/main/java/com/example/fundsmanager/**/*.kt,app/build.gradle.kts,gradle/libs.versions.toml
+alwaysApply: false
+---
+
+# Android Existing Compatibility
+
+- Keep existing package root unless explicitly requested.
+- Keep Room as local DB.
+- Keep local `Long id`.
+- Preserve transaction types:
+  - FUND_IN
+  - OFFICE_EXPENSE
+  - PERSONAL_EXPENSE
+- Preserve existing export flow.
+- Preserve `CalculateProjectSummaryUseCase` as Android summary SSOT.
+- Use additive migrations only.
+- Do not require API for local transaction save.
+- Do not break offline usage.

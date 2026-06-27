@@ -2,6 +2,7 @@ package com.example.fundsmanager.ui.screen.settings
 
 import android.os.Build
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -47,7 +48,8 @@ fun SettingsScreen(
     onProjectClick: () -> Unit,
     onTransactionClick: () -> Unit,
     onManageCategoriesClick: () -> Unit,
-    onManageAccountsClick: () -> Unit
+    onManageAccountsClick: () -> Unit,
+    onLogoutClick: () -> Unit
 ) {
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
@@ -141,6 +143,26 @@ fun SettingsScreen(
                     uriHandler.openUri("https://wa.me/6285157109377?text=Halo%20Fiyya,%20saya%20ingin%20menghubungi%20developer%20Funds%20Manager.")
                 }
             )
+            Spacer(modifier = Modifier.height(8.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth().clickable(onClick = onLogoutClick),
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEDED)),
+                border = BorderStroke(1.dp, Color(0xFFFFD5D5))
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Keluar",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFD32F2F)
+                    )
+                }
+            }
         }
     }
 }

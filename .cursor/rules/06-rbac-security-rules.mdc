@@ -1,0 +1,32 @@
+---
+description: RBAC, project permission, and security rules
+globs: backend/**/*.ts,backend/**/*.py,web/**/*.ts,web/**/*.tsx
+alwaysApply: false
+---
+
+# RBAC and Security
+
+Use:
+- role permission
+- project membership permission
+- device authorization
+
+Roles:
+- OWNER
+- ADMIN
+- FINANCE_MANAGER
+- SUPERVISOR
+- PIC
+- FIELD_ENGINEER
+- AUDITOR
+- VIEWER
+
+Sensitive actions require:
+- permission
+- reason
+- confirmation
+- audit log
+
+Field engineer can only access assigned projects.
+Auditor is read-only unless explicitly allowed.
+Attachments must not be public by default.

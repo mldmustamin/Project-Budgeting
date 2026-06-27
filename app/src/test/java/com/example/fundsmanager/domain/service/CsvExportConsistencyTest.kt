@@ -33,8 +33,8 @@ class CsvExportConsistencyTest {
         val projectId = 1L
         val summary = ProjectSummary(1, "P", 100, 0, 0, 0, 0, 100, 100, 0, 100)
         val transactions = listOf(
-            Transaction(1, 1, 1, 1, null, TransactionType.FUND_IN, "2023-01-01", "Valid Tx", 100, 100, null, null, null, null),
-            Transaction(2, 1, 1, 1, null, TransactionType.OFFICE_EXPENSE, "2023-01-01", "Deleted Tx", 50, 50, null, null, null, 12345L)
+            Transaction(1, 1, 1, 1, null, TransactionType.FUND_IN, "2023-01-01", "Valid Tx", 100, 100, null, null, null, deletedAt = null),
+            Transaction(2, 1, 1, 1, null, TransactionType.OFFICE_EXPENSE, "2023-01-01", "Deleted Tx", 50, 50, null, null, null, deletedAt = 12345L)
         )
 
         `when`(calculateProjectSummaryUseCase(projectId)).thenReturn(summary)

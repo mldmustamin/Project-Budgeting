@@ -80,6 +80,17 @@ dependencies {
     // Coil
     implementation(libs.coil.compose)
 
+    // Ktor HTTP Client
+    implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.serialization.kotlinx.json)
+
+    // WorkManager
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.work.hilt)
+    ksp(libs.work.hilt.compiler)
+
     testImplementation(libs.junit)
     testImplementation(libs.mockitoCore)
     testImplementation(libs.mockitoKotlin)
@@ -88,6 +99,7 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.room.testing)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

@@ -167,7 +167,7 @@ fun TransactionFormScreen(
                     IconButton(onClick = { showProofDialog = true }) {
                         Icon(Icons.Default.AttachFile, contentDescription = "Lampirkan bukti")
                     }
-                    IconButton(onClick = { viewModel.saveTransaction(1L) }) {
+                    IconButton(onClick = { viewModel.saveTransaction() }) {
                         Icon(Icons.Default.Check, contentDescription = "Simpan")
                     }
                 },
@@ -297,7 +297,7 @@ fun TransactionFormScreen(
 
                 PrimaryButton(
                     text = if (uiState.isEditMode) "Simpan Perubahan" else "Simpan",
-                    onClick = { viewModel.saveTransaction(1L) },
+                    onClick = { viewModel.saveTransaction() },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
