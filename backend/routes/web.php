@@ -119,6 +119,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/budget/{task}/reconcile', [App\Http\Controllers\Web\BudgetWebController::class, 'reconcile'])->name('web.budget.reconcile');
     });
 
+    // Laporan Pekerjaan (FIELD_ENGINEER)
+    Route::middleware('role:FIELD_ENGINEER')->group(function () {
+        Route::get('/laporan', [App\Http\Controllers\Web\BudgetWebController::class, 'laporanForm'])->name('web.laporan.form');
+        Route::post('/laporan', [App\Http\Controllers\Web\BudgetWebController::class, 'storeLaporan'])->name('web.laporan.store');
+    });
+
     // Sync Monitor (ADMIN, OWNER)
     Route::middleware('role:OWNER|ADMIN')->group(function () {
         Route::get('/sync', [SyncMonitorController::class, 'index'])->name('web.sync.monitor');
