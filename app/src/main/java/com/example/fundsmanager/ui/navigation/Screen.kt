@@ -29,4 +29,6 @@ sealed class Screen(val route: String) {
     object Verification : Screen("verification")
     object LaporanPekerjaan : Screen("laporan_pekerjaan")
     object CrashLog : Screen("crash_log")
+    object DashboardSummary : Screen("dashboard_summary")
+    object SyncMonitor : Screen("sync_monitor")
 }

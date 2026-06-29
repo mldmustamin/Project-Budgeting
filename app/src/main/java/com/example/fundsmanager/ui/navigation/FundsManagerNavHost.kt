@@ -38,6 +38,8 @@ import com.example.fundsmanager.ui.screen.budget.SupervisorInboxScreen
 import com.example.fundsmanager.ui.screen.budget.AssignTaskScreen
 import com.example.fundsmanager.ui.screen.budget.RealizationFormScreen
 import com.example.fundsmanager.ui.screen.budget.LaporanPekerjaanScreen
+import com.example.fundsmanager.ui.screen.dashboard.SummaryScreen
+import com.example.fundsmanager.ui.screen.settings.SyncMonitorScreen
 import com.example.fundsmanager.util.logging.AppLogCategory
 import com.example.fundsmanager.util.logging.AppLogger
 import kotlinx.coroutines.launch
@@ -427,6 +429,18 @@ fun FundsManagerNavHost(
 
         composable(Screen.CrashLog.route) {
             CrashLogScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.DashboardSummary.route) {
+            SummaryScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.SyncMonitor.route) {
+            SyncMonitorScreen(
                 onBack = { navController.popBackStack() }
             )
         }

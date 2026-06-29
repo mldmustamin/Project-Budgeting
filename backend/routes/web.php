@@ -125,6 +125,22 @@ Route::middleware('auth')->group(function () {
         Route::post('/laporan', [App\Http\Controllers\Web\BudgetWebController::class, 'storeLaporan'])->name('web.laporan.store');
     });
 
+    // Budget CRUD (FIELD_ENGINEER)
+    Route::middleware('role:FIELD_ENGINEER')->group(function () {
+        Route::get('/budget/create', [App\Http\Controllers\Web\BudgetWebController::class, 'create'])->name('web.budget.create');
+        Route::post('/budget', [App\Http\Controllers\Web\BudgetWebController::class, 'store'])->name('web.budget.store');
+        Route::get('/budget/{task}/edit', [App\Http\Controllers\Web\BudgetWebController::class, 'edit'])->name('web.budget.edit');
+        Route::get('/budget/{task}/realize', [App\Http\Controllers\Web\BudgetWebController::class, 'realize'])->name('web.budget.realize');
+        Route::post('/budget/{task}/realize', [App\Http\Controllers\Web\BudgetWebController::class, 'storeRealization'])->name('web.budget.realize-store');
+    });
+
+    // Equipment Options (ADMIN, SUPERVISOR)
+    Route::middleware('role:ADMIN|SUPERVISOR')->group(function () {
+        Route::get('/equipment', [App\Http\Controllers\Web\EquipmentWebController::class, 'index'])->name('web.equipment.index');
+        Route::post('/equipment', [App\Http\Controllers\Web\EquipmentWebController::class, 'store'])->name('web.equipment.store');
+        Route::delete('/equipment/{option}', [App\Http\Controllers\Web\EquipmentWebController::class, 'destroy'])->name('web.equipment.destroy');
+    });
+
     // Sync Monitor (ADMIN, OWNER)
     Route::middleware('role:OWNER|ADMIN')->group(function () {
         Route::get('/sync', [SyncMonitorController::class, 'index'])->name('web.sync.monitor');
