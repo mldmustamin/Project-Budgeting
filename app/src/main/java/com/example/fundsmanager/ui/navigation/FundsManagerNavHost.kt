@@ -29,6 +29,8 @@ import com.example.fundsmanager.ui.screen.settings.CategoryManagementScreen
 import com.example.fundsmanager.ui.screen.settings.SettingsScreen
 import com.example.fundsmanager.ui.screen.transaction.TransactionListScreen
 import com.example.fundsmanager.ui.screen.transaction.TransactionFormScreen
+import com.example.fundsmanager.ui.screen.budget.MyTasksScreen
+import com.example.fundsmanager.ui.screen.budget.BudgetEstimateFormScreen
 import com.example.fundsmanager.util.logging.AppLogCategory
 import com.example.fundsmanager.util.logging.AppLogger
 import kotlinx.coroutines.launch
@@ -355,6 +357,25 @@ fun FundsManagerNavHost(
                         launchSingleTop = true
                     }
                 }
+            )
+        }
+
+        // === Budget Request Screens ===
+
+        composable(Screen.MyTasks.route) {
+            MyTasksScreen(
+                onCreateClick = {
+                    navController.navigate(Screen.BudgetEstimateForm.route)
+                },
+                onTaskClick = { uuid ->
+                    // TODO: navigate to task detail/form
+                }
+            )
+        }
+
+        composable(Screen.BudgetEstimateForm.route) {
+            BudgetEstimateFormScreen(
+                onBack = { navController.popBackStack() }
             )
         }
     }

@@ -19,4 +19,11 @@ sealed class Screen(val route: String) {
             "transaction_form/$projectId" + (transactionId?.let { "?transactionId=$it" } ?: "")
     }
     object Settings : Screen("settings")
+
+    // Budget Request Screens
+    object MyTasks : Screen("my_tasks")
+    object BudgetEstimateForm : Screen("budget_estimate_form")
+    object SupervisorInbox : Screen("supervisor_inbox")
+    object Approval : Screen("approval")
+    object Verification : Screen("verification")
 }
