@@ -114,4 +114,16 @@ object DatabaseModule {
 
     @Provides
     fun provideSyncOutboxDao(db: AppDatabase): SyncOutboxDao = db.syncOutboxDao()
+
+    @Provides
+    fun provideTaskExpenseDao(db: AppDatabase): TaskExpenseDao = db.taskExpenseDao()
+
+    @Provides
+    fun provideExpenseItemDao(db: AppDatabase): ExpenseItemDao = db.expenseItemDao()
+
+    @Provides
+    fun provideBudgetTemplateDao(db: AppDatabase): BudgetTemplateDao = db.budgetTemplateDao()
+
+    @Provides
+    fun provideMasterLocationDao(db: AppDatabase): MasterLocationDao = db.masterLocationDao()
 }

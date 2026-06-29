@@ -117,6 +117,108 @@ object DatabaseMigrations {
         }
     }
 
+    val MIGRATION_8_9 = object : Migration(8, 9) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            // task_expenses
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS task_expenses (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    uuid TEXT NOT NULL,
+                    projectId INTEGER NOT NULL,
+                    locationId INTEGER,
+                    taskNo TEXT NOT NULL,
+                    vid TEXT NOT NULL,
+                    taskName TEXT,
+                    remoteName TEXT,
+                    jobType TEXT NOT NULL,
+                    stage TEXT NOT NULL DEFAULT 'DRAFT',
+                    submittedBy INTEGER NOT NULL,
+                    forwardedBy INTEGER,
+                    approvedBy INTEGER,
+                    verifiedBy INTEGER,
+                    reconciledBy INTEGER,
+                    totalEstimated INTEGER NOT NULL DEFAULT 0,
+                    totalRevised INTEGER NOT NULL DEFAULT 0,
+                    totalApproved INTEGER NOT NULL DEFAULT 0,
+                    totalRealization INTEGER NOT NULL DEFAULT 0,
+                    rejectionReason TEXT,
+                    notes TEXT,
+                    completedAt INTEGER,
+                    deadlineAt INTEGER,
+                    syncStatus TEXT NOT NULL DEFAULT 'PENDING',
+                    lastSyncedAt INTEGER,
+                    createdAt INTEGER NOT NULL,
+                    updatedAt INTEGER NOT NULL,
+                    deletedAt INTEGER
+                )
+            """.trimIndent())
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_task_expenses_uuid ON task_expenses(uuid)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_task_expenses_submittedBy ON task_expenses(submittedBy)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_task_expenses_stage ON task_expenses(stage)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_task_expenses_syncStatus ON task_expenses(syncStatus)")
+
+            // expense_items
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS expense_items (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    uuid TEXT NOT NULL,
+                    taskExpenseId INTEGER NOT NULL,
+                    templateId INTEGER,
+                    tanggal TEXT NOT NULL,
+                    note TEXT,
+                    estimatedAmount INTEGER NOT NULL DEFAULT 0,
+                    revisedAmount INTEGER,
+                    approvedAmount INTEGER,
+                    realizationAmount INTEGER,
+                    buktiPath TEXT,
+                    requiresBill INTEGER NOT NULL DEFAULT 0,
+                    billVerified INTEGER NOT NULL DEFAULT 0,
+                    itemStatus TEXT NOT NULL DEFAULT 'DRAFT',
+                    rejectionReason TEXT,
+                    sortOrder INTEGER NOT NULL DEFAULT 0,
+                    createdAt INTEGER NOT NULL,
+                    updatedAt INTEGER NOT NULL,
+                    FOREIGN KEY (taskExpenseId) REFERENCES task_expenses(id) ON DELETE CASCADE
+                )
+            """.trimIndent())
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_expense_items_uuid ON expense_items(uuid)")
+            db.execSQL("CREATE INDEX IF NOT EXISTS index_expense_items_taskExpenseId ON expense_items(taskExpenseId)")
+
+            // budget_templates
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS budget_templates (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    uuid TEXT NOT NULL,
+                    categoryName TEXT NOT NULL,
+                    categoryGroup TEXT NOT NULL,
+                    paguType TEXT NOT NULL,
+                    paguAmount INTEGER,
+                    paguNote TEXT,
+                    requiresBill INTEGER NOT NULL DEFAULT 0,
+                    billNote TEXT,
+                    displayOrder INTEGER NOT NULL DEFAULT 0,
+                    isActive INTEGER NOT NULL DEFAULT 1
+                )
+            """.trimIndent())
+
+            // master_locations
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS master_locations (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                    uuid TEXT NOT NULL,
+                    projectId INTEGER NOT NULL,
+                    remoteName TEXT NOT NULL,
+                    address TEXT NOT NULL,
+                    provinsi TEXT,
+                    kotaKab TEXT,
+                    latitude REAL,
+                    longitude REAL
+                )
+            """.trimIndent())
+            db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_master_locations_uuid ON master_locations(uuid)")
+        }
+    }
+
     val ALL = arrayOf(
         MIGRATION_1_2,
         MIGRATION_2_3,
@@ -124,7 +226,8 @@ object DatabaseMigrations {
         MIGRATION_4_5,
         MIGRATION_5_6,
         MIGRATION_6_7,
-        MIGRATION_7_8
+        MIGRATION_7_8,
+        MIGRATION_8_9
     )
 
     internal fun backfillUuids(db: SupportSQLiteDatabase, table: String) {

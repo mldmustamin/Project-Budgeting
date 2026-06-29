@@ -39,6 +39,7 @@ Bottom nav (`FundsManagerNavHost`):
 - ADMIN/FM: Verification | Transactions | Locations | Projects | Settings
 
 ## Required Skills
+- [[Architecture Best Practices]] — Official Google Android architecture guide
 - `android-apk-build` — Build & distribute APK
 - `android-debugging` — Runtime debugging checklist
 - `simplify-code` — 3-agent parallel cleanup

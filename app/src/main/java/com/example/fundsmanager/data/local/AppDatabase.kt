@@ -3,22 +3,8 @@ package com.example.fundsmanager.data.local
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import com.example.fundsmanager.data.local.dao.AccountDao
-import com.example.fundsmanager.data.local.dao.AuditLogDao
-import com.example.fundsmanager.data.local.dao.AttachmentDao
-import com.example.fundsmanager.data.local.dao.CategoryDao
-import com.example.fundsmanager.data.local.dao.ProjectDao
-import com.example.fundsmanager.data.local.dao.SyncOutboxDao
-import com.example.fundsmanager.data.local.dao.TransactionDao
-import com.example.fundsmanager.data.local.dao.UserDao
-import com.example.fundsmanager.data.local.entity.AccountEntity
-import com.example.fundsmanager.data.local.entity.AuditLogEntity
-import com.example.fundsmanager.data.local.entity.AttachmentEntity
-import com.example.fundsmanager.data.local.entity.CategoryEntity
-import com.example.fundsmanager.data.local.entity.ProjectEntity
-import com.example.fundsmanager.data.local.entity.SyncOutboxEntity
-import com.example.fundsmanager.data.local.entity.TransactionEntity
-import com.example.fundsmanager.data.local.entity.UserEntity
+import com.example.fundsmanager.data.local.dao.*
+import com.example.fundsmanager.data.local.entity.*
 
 @Database(
     entities = [
@@ -29,9 +15,13 @@ import com.example.fundsmanager.data.local.entity.UserEntity
         TransactionEntity::class,
         AttachmentEntity::class,
         AuditLogEntity::class,
-        SyncOutboxEntity::class
+        SyncOutboxEntity::class,
+        TaskExpenseEntity::class,
+        ExpenseItemEntity::class,
+        BudgetTemplateEntity::class,
+        MasterLocationEntity::class
     ],
-    version = 8,
+    version = 9,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
@@ -44,4 +34,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun attachmentDao(): AttachmentDao
     abstract fun auditLogDao(): AuditLogDao
     abstract fun syncOutboxDao(): SyncOutboxDao
+    abstract fun taskExpenseDao(): TaskExpenseDao
+    abstract fun expenseItemDao(): ExpenseItemDao
+    abstract fun budgetTemplateDao(): BudgetTemplateDao
+    abstract fun masterLocationDao(): MasterLocationDao
 }
