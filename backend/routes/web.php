@@ -11,6 +11,7 @@ use App\Http\Controllers\Web\TransactionWebController;
 use App\Http\Controllers\Web\BudgetWebController;
 use App\Http\Controllers\Web\SearchController;
 use App\Http\Controllers\Web\UserWebController;
+use App\Http\Controllers\Web\EquipmentWebController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -127,9 +128,12 @@ Route::middleware('auth')->group(function () {
 
     // Budget CRUD (FIELD_ENGINEER)
     Route::middleware('role:FIELD_ENGINEER')->group(function () {
+        Route::get('/budget', [App\Http\Controllers\Web\BudgetWebController::class, 'index'])->name('web.budget.index');
         Route::get('/budget/create', [App\Http\Controllers\Web\BudgetWebController::class, 'create'])->name('web.budget.create');
         Route::post('/budget', [App\Http\Controllers\Web\BudgetWebController::class, 'store'])->name('web.budget.store');
         Route::get('/budget/{task}/edit', [App\Http\Controllers\Web\BudgetWebController::class, 'edit'])->name('web.budget.edit');
+        Route::put('/budget/{task}', [App\Http\Controllers\Web\BudgetWebController::class, 'update'])->name('web.budget.update');
+        Route::delete('/budget/{task}', [App\Http\Controllers\Web\BudgetWebController::class, 'destroy'])->name('web.budget.destroy');
         Route::get('/budget/{task}/realize', [App\Http\Controllers\Web\BudgetWebController::class, 'realize'])->name('web.budget.realize');
         Route::post('/budget/{task}/realize', [App\Http\Controllers\Web\BudgetWebController::class, 'storeRealization'])->name('web.budget.realize-store');
     });

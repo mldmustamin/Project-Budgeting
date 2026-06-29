@@ -256,6 +256,25 @@ class BudgetWebController extends Controller
     // 4. FIELD ENGINEER — Budget Estimate Form
     // ──────────────────────────────────────
 
+    public function index(Request $request): View
+    {
+        $user = $request->user();
+
+        if (! $user->hasRole('FIELD_ENGINEER')) {
+            abort(403, 'Akses hanya untuk Field Engineer.');
+        }
+
+        $tasks = TaskExpense::with(['location:id,remote_name', 'items.template'])
+            ->where('submitted_by', $user->id)
+            ->whereNull('deleted_at')
+            ->orderByDesc('created_at')
+            ->paginate(25);
+
+        $draftCount = TaskExpense::draftCountForUser($user);
+
+        return view('web.budget.index', compact('tasks', 'draftCount'));
+    }
+
     public function create(Request $request): View
     {
         $user = $request->user();
@@ -357,6 +376,97 @@ class BudgetWebController extends Controller
         $templates = BudgetItemTemplate::active()->with('paguAmounts')->get();
 
         return view('web.budget.create', compact('task', 'locations', 'templates'));
+    }
+
+    public function update(Request $request, TaskExpense $task): RedirectResponse
+    {
+        $user = $request->user();
+
+        if (! $user->hasRole('FIELD_ENGINEER')) {
+            return back()->with('error', 'Akses hanya untuk Field Engineer.');
+        }
+
+        if ($task->submitted_by !== $user->id) {
+            return back()->with('error', 'Anda hanya dapat mengedit draft Anda sendiri.');
+        }
+
+        if (! in_array($task->stage, [TaskExpense::STAGE_DRAFT, TaskExpense::STAGE_ESTIMASI])) {
+            return back()->with('error', 'Hanya draft / estimasi yang dapat diedit.');
+        }
+
+        $validated = $request->validate([
+            'task_no'                    => ['required', 'string', 'max:50'],
+            'vid'                        => ['required', 'string', 'max:50'],
+            'job_type'                   => ['required', 'in:INSTALASI,RELOKASI,PMCM,DISMANTLE,SURVEY'],
+            'location_id'                => ['required', 'exists:master_locations,id'],
+            'items'                      => ['required', 'array', 'min:1'],
+            'items.*.template_id'        => ['required', 'exists:budget_item_templates,id'],
+            'items.*.estimated_amount'   => ['required', 'integer', 'min:0'],
+            'items.*.tanggal'            => ['required', 'date'],
+        ]);
+
+        $isDraft = $request->input('action') === 'draft';
+
+        DB::transaction(function () use ($task, $validated, $user, $isDraft) {
+            $task->update([
+                'task_no'     => $validated['task_no'],
+                'vid'         => $validated['vid'],
+                'job_type'    => $validated['job_type'],
+                'location_id' => $validated['location_id'],
+                'stage'       => $isDraft ? TaskExpense::STAGE_DRAFT : TaskExpense::STAGE_ESTIMASI,
+            ]);
+
+            // Delete old items and recreate
+            $task->items()->delete();
+
+            foreach ($validated['items'] as $i => $item) {
+                ExpenseItem::create([
+                    'task_expense_id'  => $task->id,
+                    'template_id'      => $item['template_id'],
+                    'estimated_amount' => $item['estimated_amount'],
+                    'tanggal'          => $item['tanggal'],
+                    'sort_order'       => $i,
+                ]);
+            }
+
+            $task->recalculateTotals();
+
+            TaskExpenseHistory::create([
+                'task_expense_id' => $task->id,
+                'actor_id'        => $user->id,
+                'action'          => $isDraft ? 'draft_update' : 'submit_update',
+                'old_stage'       => $task->getOriginal('stage'),
+                'new_stage'       => $task->stage,
+            ]);
+        });
+
+        $msg = $isDraft
+            ? "Draft {$task->task_no} berhasil diupdate."
+            : "Estimasi {$task->task_no} berhasil dikirim ke Kordinator.";
+
+        return redirect()->route('web.budget.index')->with('success', $msg);
+    }
+
+    public function destroy(TaskExpense $task): RedirectResponse
+    {
+        $user = auth()->user();
+
+        if (! $user->hasRole('FIELD_ENGINEER')) {
+            return back()->with('error', 'Akses hanya untuk Field Engineer.');
+        }
+
+        if ($task->submitted_by !== $user->id) {
+            return back()->with('error', 'Anda hanya dapat menghapus budget Anda sendiri.');
+        }
+
+        if (! in_array($task->stage, [TaskExpense::STAGE_DRAFT, TaskExpense::STAGE_ESTIMASI])) {
+            return back()->with('error', 'Hanya draft / estimasi yang dapat dihapus.');
+        }
+
+        $task->items()->delete();
+        $task->delete();
+
+        return redirect()->route('web.budget.index')->with('success', 'Budget berhasil dihapus.');
     }
 
     // ──────────────────────────────────────
