@@ -3,6 +3,10 @@
 @section('title', 'Transaksi')
 
 @section('content')
+<div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-semibold text-gray-800">Daftar Transaksi</h2>
+    <a href="{{ route('web.transactions.create') }}" class="px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:bg-brand-700 font-medium">+ Buat Transaksi</a>
+</div>
 <div class="bg-white rounded-xl border border-gray-200 p-4 mb-6">
     <form method="GET" action="{{ route('web.transactions.index') }}" class="flex flex-wrap gap-3 items-end">
         <div>

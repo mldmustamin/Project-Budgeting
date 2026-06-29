@@ -51,8 +51,13 @@ Route::middleware('auth')->group(function () {
     Route::patch('/projects/{project}/archive', [ProjectWebController::class, 'update'])->name('web.projects.archive');
     Route::get('/projects/{project}', [ProjectWebController::class, 'show'])->name('web.projects.show');
 
-    // Transactions (read)
+    // Transactions (read + write)
     Route::get('/transactions', [TransactionWebController::class, 'index'])->name('web.transactions.index');
+    Route::get('/transactions/create', [TransactionWebController::class, 'create'])->name('web.transactions.create');
+    Route::post('/transactions', [TransactionWebController::class, 'store'])->name('web.transactions.store');
+    Route::get('/transactions/{transaction}/edit', [TransactionWebController::class, 'edit'])->name('web.transactions.edit');
+    Route::put('/transactions/{transaction}', [TransactionWebController::class, 'update'])->name('web.transactions.update');
+    Route::delete('/transactions/{transaction}', [TransactionWebController::class, 'destroy'])->name('web.transactions.destroy');
     Route::get('/transactions/{transaction}', [TransactionWebController::class, 'show'])->name('web.transactions.show');
 
     // Approval (FINANCE_MANAGER, ADMIN, OWNER)
