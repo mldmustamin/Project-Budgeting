@@ -40,6 +40,12 @@ class MasterLocationController extends Controller
      */
     public function store(Request $request, $projectId): JsonResponse
     {
+        $user = $request->user();
+
+        // Only ADMIN or SUPERVISOR can create locations
+        if (!$user->hasRole('ADMIN') && !$user->hasRole('SUPERVISOR')) {
+            return response()->json(['message' => 'Hanya ADMIN atau SUPERVISOR yang bisa menambah lokasi'], 403);
+        }
         $validated = $request->validate([
             'remote_name' => ['required', 'string', 'max:255'],
             'address' => ['required', 'string'],
@@ -70,6 +76,12 @@ class MasterLocationController extends Controller
      */
     public function update(Request $request, MasterLocation $location): JsonResponse
     {
+        $user = $request->user();
+
+        // Only ADMIN or SUPERVISOR can update locations
+        if (!$user->hasRole('ADMIN') && !$user->hasRole('SUPERVISOR')) {
+            return response()->json(['message' => 'Hanya ADMIN atau SUPERVISOR yang bisa mengupdate lokasi'], 403);
+        }
         $validated = $request->validate([
             'remote_name' => ['sometimes', 'string', 'max:255'],
             'address' => ['sometimes', 'string'],
@@ -89,8 +101,14 @@ class MasterLocationController extends Controller
      * Delete location. (ADMIN, SUPERVISOR only)
      * DELETE /api/locations/{location}
      */
-    public function destroy(MasterLocation $location): JsonResponse
+    public function destroy(Request $request, MasterLocation $location): JsonResponse
     {
+        $user = $request->user();
+
+        // Only ADMIN or SUPERVISOR can delete locations
+        if (!$user->hasRole('ADMIN') && !$user->hasRole('SUPERVISOR')) {
+            return response()->json(['message' => 'Hanya ADMIN atau SUPERVISOR yang bisa menghapus lokasi'], 403);
+        }
         $location->delete();
         return response()->json(['message' => 'Location deleted'], 200);
     }

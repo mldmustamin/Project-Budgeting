@@ -117,7 +117,7 @@ class TaskExpenseApiTest extends TestCase
                 'vid' => 'BNM26072',
                 'job_type' => 'SURVEY',
                 'items' => [
-                    ['template_id' => 1, 'tanggal' => '2026-06-27', 'estimated_amount' => 300000],
+                    ['template_id' => 32, 'tanggal' => '2026-06-27', 'estimated_amount' => 300000],
                 ],
             ]);
         $response->assertCreated();
@@ -294,5 +294,58 @@ class TaskExpenseApiTest extends TestCase
             ->deleteJson("/api/v1/task-expenses/{$uuid}");
 
         $delete->assertStatus(422);
+    }
+
+    /** @test */
+    public function engineer_cannot_approve_own_budget()
+    {
+        $response = $this->actingAs($this->engineer, 'sanctum')
+            ->postJson('/api/v1/task-expenses', [
+                'project_id' => $this->project->id, 'task_no' => 'SEC-001', 'vid' => 'SEC-001',
+                'job_type' => 'INSTALASI',
+                'items' => [['template_id' => 32, 'tanggal' => '2026-06-27', 'estimated_amount' => 50000]],
+            ]);
+        $uuid = $response->json('data.uuid');
+        $this->actingAs($this->engineer, 'sanctum')->postJson("/api/v1/task-expenses/{$uuid}/submit");
+        $this->actingAs($this->supervisor, 'sanctum')->postJson("/api/v1/task-expenses/{$uuid}/forward");
+        $approve = $this->actingAs($this->engineer, 'sanctum')
+            ->postJson("/api/v1/task-expenses/{$uuid}/approve", [
+                'items' => [['id' => $response->json('data.items.0.id'), 'approved_amount' => 50000]],
+            ]);
+        $approve->assertForbidden();
+    }
+
+    /** @test */
+    public function pagu_enforcement_blocks_exceeded_fixed_pagu()
+    {
+        $response = $this->actingAs($this->engineer, 'sanctum')
+            ->postJson('/api/v1/task-expenses', [
+                'project_id' => $this->project->id, 'task_no' => 'PAGU-001', 'vid' => 'PAGU-001',
+                'job_type' => 'INSTALASI',
+                'items' => [['template_id' => 1, 'tanggal' => '2026-06-27', 'estimated_amount' => 500000]],
+            ]);
+        $response->assertStatus(422)->assertJsonPath('violations.0.type', 'EXCEEDED');
+    }
+
+    /** @test */
+    public function hotel_can_exceed_pagu_with_warning()
+    {
+        $response = $this->actingAs($this->engineer, 'sanctum')
+            ->postJson('/api/v1/task-expenses', [
+                'project_id' => $this->project->id, 'task_no' => 'PAGU-002', 'vid' => 'PAGU-002',
+                'job_type' => 'INSTALASI',
+                'items' => [['template_id' => 2, 'tanggal' => '2026-06-27', 'estimated_amount' => 350000]],
+            ]);
+        $response->assertCreated()->assertJsonPath('warnings.0.type', 'HOTEL_EXCEED');
+    }
+
+    /** @test */
+    public function non_engineer_cannot_create_budget_request()
+    {
+        $this->actingAs($this->supervisor, 'sanctum')
+            ->postJson('/api/v1/task-expenses', [
+                'project_id' => $this->project->id, 'task_no' => 'SEC-003', 'vid' => 'SEC-003',
+                'job_type' => 'INSTALASI',
+            ])->assertForbidden();
     }
 }

@@ -85,6 +85,11 @@ class TaskExpenseController extends Controller
     {
         $user = $request->user();
 
+        // Only FIELD_ENGINEER can create budget requests
+        if (!$user->hasRole('FIELD_ENGINEER')) {
+            return response()->json(['message' => 'Hanya FIELD_ENGINEER yang bisa membuat estimasi'], 403);
+        }
+
         // Max 5 drafts enforcement
         $maxDrafts = config('budget.max_drafts_per_user', 5);
         if (TaskExpense::draftCountForUser($user) >= $maxDrafts) {
@@ -99,7 +104,7 @@ class TaskExpenseController extends Controller
             'task_no' => ['required', 'string', 'max:50'],
             'vid' => ['required', 'string', 'max:50'],
             'task_name' => ['nullable', 'string', 'max:500'],
-            'job_type' => ['required', 'string', 'in:INSTALASI,RELOKASI,PMCM,DISMANTLE,SURVEY'],
+            'job_type' => ['required', 'string', 'in:'.implode(',', config('budget.job_types', ['INSTALASI','RELOKASI','PMCM','DISMANTLE','SURVEY']))],
             'notes' => ['nullable', 'string'],
             'deadline_at' => ['nullable', 'date'],
             'items' => ['nullable', 'array'],
@@ -114,6 +119,26 @@ class TaskExpenseController extends Controller
         if (!empty($validated['location_id'])) {
             $location = MasterLocation::find($validated['location_id']);
             $remoteName = $location?->remote_name;
+        }
+
+        // Pagu enforcement
+        $paguViolations = [];
+        $paguWarnings = [];
+        if (!empty($validated['items'])) {
+            $violations = $this->validatePagu($validated['job_type'], $validated['items']);
+            foreach ($violations as $v) {
+                if ($v['type'] === 'HOTEL_EXCEED') {
+                    $paguWarnings[] = $v;
+                } else {
+                    $paguViolations[] = $v;
+                }
+            }
+            if (!empty($paguViolations)) {
+                return response()->json([
+                    'message' => 'Beberapa item melebihi pagu',
+                    'violations' => $paguViolations,
+                ], 422);
+            }
         }
 
         $task = DB::transaction(function () use ($validated, $user, $remoteName) {
@@ -152,7 +177,13 @@ class TaskExpenseController extends Controller
         });
 
         $task->load('items.template');
-        return response()->json(['data' => $task], 201);
+
+        $responseData = ['data' => $task];
+        if (!empty($paguWarnings)) {
+            $responseData['warnings'] = $paguWarnings;
+        }
+
+        return response()->json($responseData, 201);
     }
 
     /**
@@ -267,11 +298,16 @@ class TaskExpenseController extends Controller
      */
     public function forward(Request $request, TaskExpense $taskExpense): JsonResponse
     {
+        $user = $request->user();
+
+        // Only SUPERVISOR can forward
+        if (!$user->hasRole('SUPERVISOR')) {
+            return response()->json(['message' => 'Hanya SUPERVISOR yang bisa memforward'], 403);
+        }
+
         if ($taskExpense->stage !== TaskExpense::STAGE_ESTIMASI) {
             return response()->json(['message' => 'Hanya task status ESTIMASI yang bisa diforward'], 422);
         }
-
-        $user = $request->user();
 
         // SUPERVISOR may edit items before forwarding
         $validated = $request->validate([
@@ -282,17 +318,22 @@ class TaskExpenseController extends Controller
         ]);
 
         DB::transaction(function () use ($validated, $taskExpense, $user) {
+            // Preload templates to avoid N+1
+            $itemIds = collect($validated['items'] ?? [])->pluck('id')->filter();
+            $items = collect();
+            if ($itemIds->isNotEmpty()) {
+                $items = ExpenseItem::whereIn('id', $itemIds)
+                    ->where('task_expense_id', $taskExpense->id)
+                    ->with('template:id,category_name')
+                    ->get()
+                    ->keyBy('id');
+            }
+
             // Apply SUPERVISOR revisions
             if (!empty($validated['items'])) {
-                $revisionSummary = [];
                 foreach ($validated['items'] as $itemData) {
-                    $item = ExpenseItem::where('id', $itemData['id'])
-                        ->where('task_expense_id', $taskExpense->id)
-                        ->first();
+                    $item = $items->get($itemData['id']);
                     if ($item && ($itemData['revised_amount'] ?? null) !== null) {
-                        if ($item->estimated_amount !== (int)$itemData['revised_amount']) {
-                            $revisionSummary[] = "{$item->template?->category_name}: {$item->estimated_amount} → {$itemData['revised_amount']}";
-                        }
                         $item->update(['revised_amount' => $itemData['revised_amount']]);
                     }
                 }
@@ -302,7 +343,9 @@ class TaskExpenseController extends Controller
             $taskExpense->update([
                 'stage' => TaskExpense::STAGE_FORWARDED,
                 'forwarded_by' => $user->id,
-                'notes' => $validated['notes'] ?? $taskExpense->notes,
+                'notes' => $taskExpense->notes
+                    ? $taskExpense->notes . "\n---\nKordinator: " . ($validated['notes'] ?? '')
+                    : ($validated['notes'] ?? null),
             ]);
 
             TaskExpenseHistory::create([
@@ -325,6 +368,13 @@ class TaskExpenseController extends Controller
      */
     public function approve(Request $request, TaskExpense $taskExpense): JsonResponse
     {
+        $user = $request->user();
+
+        // Only OWNER can approve
+        if (!$user->hasRole('OWNER')) {
+            return response()->json(['message' => 'Hanya OWNER yang bisa approve'], 403);
+        }
+
         if ($taskExpense->stage !== TaskExpense::STAGE_FORWARDED) {
             return response()->json(['message' => 'Hanya task status FORWARDED yang bisa diapprove'], 422);
         }
@@ -357,11 +407,20 @@ class TaskExpenseController extends Controller
             }
             $taskExpense->recalculateTotals();
 
-            $taskExpense->update([
-                'stage' => TaskExpense::STAGE_APPROVED,
-                'approved_by' => $user->id,
-                'notes' => $validated['notes'] ?? $taskExpense->notes,
-            ]);
+            // Stage update with optimistic locking
+            $updated = TaskExpense::where('id', $taskExpense->id)
+                ->where('stage', TaskExpense::STAGE_FORWARDED)
+                ->update([
+                    'stage' => TaskExpense::STAGE_APPROVED,
+                    'approved_by' => $user->id,
+                    'notes' => $validated['notes'] ?? $taskExpense->notes,
+                ]);
+
+            if (!$updated) {
+                throw new \RuntimeException('Task sudah berubah stage, silakan refresh');
+            }
+
+            $taskExpense->refresh();
 
             TaskExpenseHistory::create([
                 'task_expense_id' => $taskExpense->id,
@@ -383,6 +442,13 @@ class TaskExpenseController extends Controller
      */
     public function reject(Request $request, TaskExpense $taskExpense): JsonResponse
     {
+        $user = $request->user();
+
+        // Only SUPERVISOR or OWNER can reject
+        if (!$user->hasRole('SUPERVISOR') && !$user->hasRole('OWNER')) {
+            return response()->json(['message' => 'Hanya SUPERVISOR atau OWNER yang bisa mereject'], 403);
+        }
+
         $allowedStages = config('budget.rejectable_stages', ['ESTIMASI', 'FORWARDED']);
         if (!in_array($taskExpense->stage, $allowedStages)) {
             return response()->json(['message' => 'Hanya task ESTIMASI atau FORWARDED yang bisa direject'], 422);
@@ -494,15 +560,22 @@ class TaskExpenseController extends Controller
      */
     public function verify(Request $request, TaskExpense $taskExpense): JsonResponse
     {
+        $user = $request->user();
+
+        // Only ADMIN or FINANCE_MANAGER can verify
+        if (!$user->hasRole('ADMIN') && !$user->hasRole('FINANCE_MANAGER')) {
+            return response()->json(['message' => 'Hanya ADMIN atau FINANCE_MANAGER yang bisa verifikasi'], 403);
+        }
+
         if ($taskExpense->stage !== TaskExpense::STAGE_REALISASI) {
             return response()->json(['message' => 'Hanya task REALISASI yang bisa diverifikasi'], 422);
         }
 
         $validated = $request->validate([
             'notes' => ['nullable', 'string'],
-            'items' => ['nullable', 'array'],
+            'items' => ['required', 'array'],
             'items.*.id' => ['required', 'exists:expense_items,id'],
-            'items.*.bill_verified' => ['nullable', 'boolean'],
+            'items.*.bill_verified' => ['required', 'boolean'],
         ]);
 
         DB::transaction(function () use ($validated, $taskExpense) {
@@ -544,6 +617,13 @@ class TaskExpenseController extends Controller
      */
     public function reconcile(Request $request, TaskExpense $taskExpense): JsonResponse
     {
+        $user = $request->user();
+
+        // Only FINANCE_MANAGER can reconcile
+        if (!$user->hasRole('FINANCE_MANAGER')) {
+            return response()->json(['message' => 'Hanya FINANCE_MANAGER yang bisa rekonsiliasi'], 403);
+        }
+
         if ($taskExpense->stage !== TaskExpense::STAGE_VERIFIED) {
             return response()->json(['message' => 'Hanya task VERIFIED yang bisa direkonsiliasi'], 422);
         }
@@ -622,5 +702,50 @@ class TaskExpenseController extends Controller
                 'new_stage' => $newStage,
             ]);
         });
+    }
+
+    /**
+     * Validate items against pagu rules.
+     * Returns array of violations, or empty array if all valid.
+     */
+    private function validatePagu(string $jobType, array $items): array
+    {
+        $violations = [];
+        foreach ($items as $item) {
+            $templateId = $item['template_id'] ?? null;
+            if (!$templateId) continue;
+
+            $template = \App\Models\BudgetItemTemplate::with('paguAmounts')->find($templateId);
+            if (!$template || $template->pagu_type !== 'FIXED_PAGU') continue;
+
+            $amount = $item['estimated_amount'] ?? 0;
+            $paguAmount = $template->getAmountForJobType($jobType);
+
+            if ($paguAmount === null) continue; // null = not applicable for this job_type (e.g. BURUH for PMCM)
+
+            if ($amount > $paguAmount) {
+                // Hotel exception: can exceed pagu but requires bill
+                if (in_array($template->category_group, ['HOTEL_LK', 'HOTEL_PAPUA']) && config('budget.hotel_can_exceed_pagu', true)) {
+                    $violations[] = [
+                        'template_id' => $templateId,
+                        'category' => $template->category_name,
+                        'amount' => $amount,
+                        'pagu' => $paguAmount,
+                        'type' => 'HOTEL_EXCEED',
+                        'message' => "Hotel melebihi pagu Rp {$paguAmount}. Bill asli WAJIB dilampirkan.",
+                    ];
+                } else {
+                    $violations[] = [
+                        'template_id' => $templateId,
+                        'category' => $template->category_name,
+                        'amount' => $amount,
+                        'pagu' => $paguAmount,
+                        'type' => 'EXCEEDED',
+                        'message' => "{$template->category_name} melebihi pagu Rp {$paguAmount}.",
+                    ];
+                }
+            }
+        }
+        return $violations;
     }
 }
