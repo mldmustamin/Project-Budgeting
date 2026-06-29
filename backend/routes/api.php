@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BudgetItemTemplateController;
+use App\Http\Controllers\Api\CrashReportController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\MasterEquipmentOptionController;
 use App\Http\Controllers\Api\MasterLocationController;
@@ -89,6 +90,8 @@ Route::prefix('v1/sync')->middleware('auth:sanctum')->group(function () {
 
 // Health check (public)
 Route::get('/health', fn () => response()->json(['status' => 'ok']));
+
+Route::post('/v1/crash-reports', [CrashReportController::class, 'store']);
 
 // Budget Item Templates — Sanctum protected
 Route::prefix('v1/budget-templates')->middleware('auth:sanctum')->group(function () {

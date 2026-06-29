@@ -1,12 +1,9 @@
 package com.example.fundsmanager
 
 import android.app.Application
-import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.NetworkType
-import androidx.work.PeriodicWorkRequestBuilder
-import androidx.work.WorkManager
+import androidx.work.*
 import com.example.fundsmanager.data.sync.SyncWorker
+import com.example.fundsmanager.util.CrashReporter
 import com.example.fundsmanager.util.logging.AppLogCategory
 import com.example.fundsmanager.util.logging.FileAppLogger
 import dagger.hilt.android.HiltAndroidApp
@@ -17,8 +14,14 @@ class FundsManagerApp : Application() {
     override fun onCreate() {
         super.onCreate()
         val appLogger = FileAppLogger(this)
+
+        // Crash Reporter — saves crashes for later review
+        CrashReporter.init(this)
+
+        // Also log to file logger
         val originalHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            CrashReporter.init(this) // ensure captured
             appLogger.crash(
                 screen = "Application",
                 action = "uncaught_exception",
@@ -27,15 +30,15 @@ class FundsManagerApp : Application() {
             )
             originalHandler?.uncaughtException(thread, throwable)
         }
+
         appLogger.info(
             category = AppLogCategory.APP,
             screen = "Application",
             action = "app_opened",
             message = "Funds Manager app opened",
-            details = "packageName=$packageName"
+            details = "packageName=$packageName, crashes_pending=${CrashReporter.hasPendingCrashes()}"
         )
 
-        // Schedule periodic background sync
         scheduleSync()
     }
 
@@ -43,17 +46,11 @@ class FundsManagerApp : Application() {
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
-
-        val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(
-            15, TimeUnit.MINUTES
-        )
+        val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(15, TimeUnit.MINUTES)
             .setConstraints(constraints)
             .build()
-
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "fundsmanager_sync",
-            ExistingPeriodicWorkPolicy.KEEP,
-            syncRequest
+            "fundsmanager_sync", ExistingPeriodicWorkPolicy.KEEP, syncRequest
         )
     }
 }

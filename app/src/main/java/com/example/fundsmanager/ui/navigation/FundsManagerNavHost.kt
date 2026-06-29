@@ -27,6 +27,7 @@ import com.example.fundsmanager.ui.screen.project.ProjectListScreen
 import com.example.fundsmanager.ui.screen.settings.AccountManagementScreen
 import com.example.fundsmanager.ui.screen.settings.CategoryManagementScreen
 import com.example.fundsmanager.ui.screen.settings.SettingsScreen
+import com.example.fundsmanager.ui.screen.settings.CrashLogScreen
 import com.example.fundsmanager.ui.screen.transaction.TransactionListScreen
 import com.example.fundsmanager.ui.screen.transaction.TransactionFormScreen
 import com.example.fundsmanager.ui.screen.budget.MyTasksScreen
@@ -420,6 +421,12 @@ fun FundsManagerNavHost(
 
         composable(Screen.Verification.route) {
             VerificationScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.CrashLog.route) {
+            CrashLogScreen(
                 onBack = { navController.popBackStack() }
             )
         }
