@@ -200,10 +200,10 @@ class TransactionApprovalTest extends TestCase
             ->assertJsonValidationErrors(['role']);
     }
 
-    public function test_viewer_cannot_approve(): void
+    public function test_auditor_cannot_approve(): void
     {
         $user = User::factory()->create();
-        $user->assignRole('VIEWER');
+        $user->assignRole('AUDITOR');
 
         $project = Project::factory()->create();
         $tx = Transaction::factory()->create([

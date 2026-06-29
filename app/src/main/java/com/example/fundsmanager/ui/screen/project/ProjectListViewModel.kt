@@ -33,7 +33,8 @@ data class ProjectListItem(
 data class ProjectListUiState(
     val projects: List<ProjectListItem> = emptyList(),
     val showArchived: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val canCreateProject: Boolean = false
 )
 
 @HiltViewModel
@@ -49,6 +50,17 @@ class ProjectListViewModel @Inject constructor(
 
     init {
         observeProjects()
+        observeCanCreateProject()
+    }
+
+    private fun observeCanCreateProject() {
+        viewModelScope.launch {
+            sessionManager.activeSession.collectLatest { session ->
+                val roles = session?.roles ?: emptyList()
+                val canCreate = roles.any { it in listOf("OWNER", "ADMIN", "FINANCE_MANAGER", "SUPERVISOR") }
+                _uiState.update { it.copy(canCreateProject = canCreate) }
+            }
+        }
     }
 
     fun addProject(name: String, startDate: String?, completedDate: String?) {

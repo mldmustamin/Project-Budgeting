@@ -68,9 +68,17 @@ class AttachmentController extends Controller
         ], 201);
     }
 
-    public function show(Attachment $attachment, Request $request): mixed
+    public function show(string $uuid, Request $request): mixed
     {
         $user = $request->user();
+
+        $attachment = Attachment::where('uuid', $uuid)->first();
+
+        if (! $attachment) {
+            return response()->json([
+                'error' => 'Attachment not found.',
+            ], 404);
+        }
 
         $this->authorizeAccess($user, $attachment->transaction);
 

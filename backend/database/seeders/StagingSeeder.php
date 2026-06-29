@@ -11,9 +11,9 @@ class StagingSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->call(RolePermissionSeeder::class);
+        // Roles already seeded by RolePermissionSeeder (called by DatabaseSeeder)
 
-        $admin = User::factory()->create([
+        $owner = User::factory()->create([
             'name' => 'Super Admin',
             'employee_id' => '10001',
             'email' => 'admin@fundsmanager.test',
@@ -21,7 +21,7 @@ class StagingSeeder extends Seeder
             'password_change_required' => false,
             'uuid' => (string) Str::uuid(),
         ]);
-        $admin->assignRole('OWNER');
+        $owner->assignRole('OWNER');
 
         $finance = User::factory()->create([
             'name' => 'Finance Staging',
@@ -43,10 +43,36 @@ class StagingSeeder extends Seeder
         ]);
         $engineer->assignRole('FIELD_ENGINEER');
 
-        Project::factory()->create(['user_id' => $engineer->id, 'name' => 'Project Alpha Staging', 'description' => 'Sample project']);
+        $supervisor = User::factory()->create([
+            'name' => 'Supervisor Staging',
+            'employee_id' => '10004',
+            'email' => 'supervisor@fundsmanager.test',
+            'password' => bcrypt('password123'),
+            'password_change_required' => false,
+            'uuid' => (string) Str::uuid(),
+        ]);
+        $supervisor->assignRole('SUPERVISOR');
 
-        $this->command?->info('Super Admin: 10001 / admin');
-        $this->command?->info('Finance: 10002 / password123');
-        $this->command?->info('Engineer: 10003 / password123 (harus ganti password)');
+        $auditor = User::factory()->create([
+            'name' => 'Auditor Staging',
+            'employee_id' => '10005',
+            'email' => 'auditor@fundsmanager.test',
+            'password' => bcrypt('password123'),
+            'password_change_required' => false,
+            'uuid' => (string) Str::uuid(),
+        ]);
+        $auditor->assignRole('AUDITOR');
+
+        Project::factory()->create([
+            'user_id' => $engineer->id,
+            'name' => 'Project Alpha Staging',
+            'description' => 'Sample project',
+        ]);
+
+        $this->command?->info('Super Admin (OWNER): 10001 / admin');
+        $this->command?->info('Finance Manager: 10002 / password123');
+        $this->command?->info('Field Engineer: 10003 / password123 (harus ganti password)');
+        $this->command?->info('Supervisor: 10004 / password123');
+        $this->command?->info('Auditor: 10005 / password123');
     }
 }

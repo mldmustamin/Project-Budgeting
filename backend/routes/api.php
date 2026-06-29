@@ -31,6 +31,7 @@ Route::prefix('v1/auth')->group(function () {
 Route::prefix('v1/auth')->middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
 });
 
 // Projects — Sanctum protected

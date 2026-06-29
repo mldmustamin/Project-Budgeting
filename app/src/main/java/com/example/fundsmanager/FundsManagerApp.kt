@@ -1,9 +1,16 @@
 package com.example.fundsmanager
 
 import android.app.Application
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import com.example.fundsmanager.data.sync.SyncWorker
 import com.example.fundsmanager.util.logging.AppLogCategory
 import com.example.fundsmanager.util.logging.FileAppLogger
 import dagger.hilt.android.HiltAndroidApp
+import java.util.concurrent.TimeUnit
 
 @HiltAndroidApp
 class FundsManagerApp : Application() {
@@ -26,6 +33,27 @@ class FundsManagerApp : Application() {
             action = "app_opened",
             message = "Funds Manager app opened",
             details = "packageName=$packageName"
+        )
+
+        // Schedule periodic background sync
+        scheduleSync()
+    }
+
+    private fun scheduleSync() {
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
+
+        val syncRequest = PeriodicWorkRequestBuilder<SyncWorker>(
+            15, TimeUnit.MINUTES
+        )
+            .setConstraints(constraints)
+            .build()
+
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+            "fundsmanager_sync",
+            ExistingPeriodicWorkPolicy.KEEP,
+            syncRequest
         )
     }
 }

@@ -15,10 +15,8 @@ class RolePermissionSeeder extends Seeder
             'ADMIN',
             'FINANCE_MANAGER',
             'SUPERVISOR',
-            'PIC',
             'FIELD_ENGINEER',
             'AUDITOR',
-            'VIEWER',
         ];
 
         foreach ($roles as $roleName) {

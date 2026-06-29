@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.platform.LocalContext
@@ -179,7 +180,8 @@ fun FundsManagerNavHost(
         }
 
         composable(Screen.Settings.route) {
-            val sessionManager: SessionManager = hiltViewModel()
+            val context = LocalContext.current
+            val sessionManager = remember { SessionManager(context.applicationContext) }
             val scope = rememberCoroutineScope()
             SettingsScreen(
                 onDashboardClick = {

@@ -1,66 +1,93 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# FundManager V2 — Backend & Web Dashboard
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Backend API + Web Dashboard untuk aplikasi manajemen dana project lapangan.
 
-## About Laravel
+## Production Build — Status
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+| Komponen | Status |
+|----------|--------|
+| **Database** | PostgreSQL 14 (localhost:5432) |
+| **Cache/Queue** | Redis (localhost:6379) |
+| **Queue Worker** | Laravel Horizon (running) |
+| **API Endpoints** | 28 endpoints (cached) |
+| **Web Dashboard** | Blade + Livewire (cached) |
+| **Tests** | 124 passed, 381 assertions |
+| **Server** | PHP 8.2, Laravel 11 |
+| **Port** | 8080 |
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Staging Credentials
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+| User | Login | Password | Role |
+|------|-------|----------|------|
+| Super Admin | `admin@fundsmanager.test` or `10001` | `admin` | OWNER |
+| Finance | `finance@fundsmanager.test` or `10002` | `password123` | FINANCE_MANAGER |
+| Engineer | `engineer@fundsmanager.test` or `10003` | `password123` | FIELD_ENGINEER |
 
-## Learning Laravel
+### API Endpoints (28)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+```
+POST   /api/v1/auth/login
+POST   /api/v1/auth/logout
+GET    /api/v1/auth/me
+POST   /api/v1/devices/register
+GET    /api/v1/transactions
+POST   /api/v1/transactions
+GET    /api/v1/transactions/{uuid}
+POST   /api/v1/transactions/{uuid}/submit
+POST   /api/v1/transactions/{uuid}/approve
+POST   /api/v1/transactions/{uuid}/reject
+POST   /api/v1/transactions/{uuid}/void
+POST   /api/v1/transactions/{uuid}/correction
+POST   /api/v1/transactions/{uuid}/dispute
+POST   /api/v1/transactions/{uuid}/resolve-dispute
+POST   /api/v1/transactions/{uuid}/attachments
+GET    /api/v1/attachments/{uuid}
+GET    /api/v1/projects
+POST   /api/v1/projects
+PATCH  /api/v1/projects/{uuid}
+GET    /api/v1/projects/{uuid}/summary
+GET    /api/v1/projects/{uuid}/export
+POST   /api/v1/projects/{uuid}/assignments
+GET    /api/v1/periods
+POST   /api/v1/periods/{id}/close
+POST   /api/v1/periods/{id}/reopen
+POST   /api/v1/sync/push
+GET    /api/v1/sync/changes
+GET    /api/v1/sync/status
+```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### Web Dashboard Routes
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```
+/login       — Login page
+/            — Dashboard
+/projects    — Project list & CRUD
+/transactions — Transaction list & detail
+/approval    — Approval queue
+/audit       — Audit trail
+/periods     — Period management
+/users       — User management
+/sync        — Sync monitor
+```
 
-## Laravel Sponsors
+## Running Locally
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+# Start server
+php artisan serve --port=8080
 
-### Premium Partners
+# Start Horizon (queue worker)
+php artisan horizon
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+# Run tests
+php artisan test
+```
 
-## Contributing
+## Stack
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
-
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+- **Backend:** Laravel 11 + Sanctum + Spatie Permission
+- **Database:** PostgreSQL (prod) / SQLite (dev/test)
+- **Cache/Queue:** Redis
+- **Web:** Blade + Livewire + Alpine.js + Tailwind CSS
+- **Queue Monitor:** Laravel Horizon
+- **Infra:** PHP 8.2, Nginx (reverse proxy)

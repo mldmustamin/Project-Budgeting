@@ -16,14 +16,37 @@ Effective permission = role AND project assignment AND device valid.
 
 | Role | Description |
 |------|-------------|
-| OWNER | Full org control |
-| ADMIN | User/device/project admin, no destructive org actions |
-| FINANCE_MANAGER | Approval, closing, reconciliation, settlement |
-| SUPERVISOR | Approve/reject for assigned projects |
-| PIC | Person in charge; settlement participant |
-| FIELD_ENGINEER | Mobile capture, assigned projects only |
-| AUDITOR | Read-only audit and reports |
-| VIEWER | Read-only dashboard |
+| OWNER | Manager — full org control, budget approval, final decision |
+| ADMIN | User/device/project admin, rekonsiliasi data realisasi |
+| FINANCE_MANAGER | Pencocokan data realisasi penggunaan dana ke kordinator, closing, reconciliation |
+| SUPERVISOR | Kordinator lapangan — budget request ke Manager, approve/reject transaksi tim |
+| FIELD_ENGINEER | Mobile capture transaksi/estimasi, assigned projects only |
+| AUDITOR | Read-only audit dan reports |
+
+---
+
+## Pembagian Wewenang Kunci
+
+### Budget Request → Budget Approval
+| Tahap | Actor | Wewenang |
+|-------|-------|----------|
+| Submit budget request | SUPERVISOR (Kordinator) | Estimasi kebutuhan dana per lokasi/project |
+| Approve budget + set nominal | **OWNER (Manager)** | Keputusan final nominal budget |
+| Lihat budget historis lokasi | OWNER (auto system query) | Data kunjungan terakhir sebagai pertimbangan |
+
+### Realisasi → Rekonsiliasi
+| Tahap | Actor | Wewenang |
+|-------|-------|----------|
+| Input transaksi realisasi | FIELD_ENGINEER, SUPERVISOR | Capture pengeluaran aktual di lapangan |
+| Cocokkan data realisasi | FINANCE_MANAGER, ADMIN | Mencocokkan data realisasi penggunaan dana ke kordinator |
+| Reconciliation final | FINANCE_MANAGER | Finalisasi pencocokan |
+
+### Transaksi
+| Tahap | Actor | Wewenang |
+|-------|-------|----------|
+| Submit transaksi | FIELD_ENGINEER, SUPERVISOR | Ajukan transaksi untuk approval |
+| Approve transaksi | FINANCE_MANAGER, SUPERVISOR | Approval transaksi harian tim |
+| Void / correction | FINANCE_MANAGER | Pembatalan / koreksi transaksi approved |
 
 ---
 
@@ -31,29 +54,21 @@ Effective permission = role AND project assignment AND device valid.
 
 | Action | Required Permission |
 |--------|---------------------|
-| Create transaction (mobile) | FIELD_ENGINEER + project assignment |
+| Create transaction (mobile) | FIELD_ENGINEER or SUPERVISOR + project assignment |
+| Submit budget request | SUPERVISOR + project assignment |
+| **Approve budget request** | **OWNER only** |
 | Approve transaction | FINANCE_MANAGER or SUPERVISOR + project |
 | Reject / need revision | Same as approve |
 | Void approved tx | FINANCE_MANAGER |
 | Correction | FINANCE_MANAGER or SUPERVISOR |
 | Close period | FINANCE_MANAGER or OWNER |
-| Reconciliation finalize | FINANCE_MANAGER |
+| Reconciliation finalize | FINANCE_MANAGER or ADMIN |
+| Rekonsiliasi data realisasi | FINANCE_MANAGER, ADMIN |
 | User CRUD | ADMIN or OWNER |
 | Device revoke | ADMIN or OWNER |
 | Project assignment | ADMIN |
+| Create project | OWNER, ADMIN, FINANCE_MANAGER, SUPERVISOR |
 | View audit trail | AUDITOR, FINANCE_MANAGER, ADMIN, OWNER |
-
----
-
-## Sensitive Action Requirements
-
-All sensitive web actions must include:
-1. Permission check (server-side)
-2. Reason (text, min length)
-3. Confirmation step (UI modal)
-4. Audit log entry (server immutable)
-
-Android local actions log to `audit_logs` table; synced audit merges to server trail.
 
 ---
 
@@ -61,6 +76,7 @@ Android local actions log to `audit_logs` table; synced audit merges to server t
 
 - Can only read/write projects in assignment cache
 - Cannot approve own transactions (separation of duties — server enforced)
+- Cannot create budget request
 - Cannot access web admin modules
 - Sync push validated against assignments server-side
 
@@ -94,7 +110,7 @@ Android local actions log to `audit_logs` table; synced audit merges to server t
 - Refresh token rotation (Sanctum)
 - Device binding optional for high-security deployments
 - Failed login rate limiting (Laravel built-in `RateLimiter`)
-- **RBAC implementation:** Spatie Laravel Permission (published, migrated, seeded with 8 FMv2 roles). Role checks via `$user->hasRole('OWNER')` and `$user->can('approve')`. Gates/Policies for fine-grained action permissions.
+- **RBAC implementation:** Spatie Laravel Permission (published, migrated, seeded with 6 FMv2 roles). Role checks via `$user->hasRole('OWNER')` and `$user->can('approve')`. Gates/Policies for fine-grained action permissions.
 
 ---
 

@@ -175,14 +175,16 @@ fun ProjectListScreen(
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.ExtraBold
                 )
-                Button(
-                    onClick = { showAddDialog = true },
-                    shape = RoundedCornerShape(18.dp),
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 9.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                ) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(17.dp))
-                    Text("Project", fontWeight = FontWeight.Bold)
+                if (uiState.canCreateProject) {
+                    Button(
+                        onClick = { showAddDialog = true },
+                        shape = RoundedCornerShape(18.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 9.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(17.dp))
+                        Text("Project", fontWeight = FontWeight.Bold)
+                    }
                 }
             }
 
@@ -195,7 +197,10 @@ fun ProjectListScreen(
                         body = "Project yang diarsipkan akan muncul di sini."
                     )
                 } else {
-                    EmptyProjectState(onCreateClick = { showAddDialog = true })
+                    EmptyProjectState(
+                        onCreateClick = { showAddDialog = true },
+                        canCreate = uiState.canCreateProject
+                    )
                 }
                 ArchiveToggleButton(
                     showArchived = uiState.showArchived,
@@ -249,18 +254,20 @@ private fun ArchiveToggleButton(
 }
 
 @Composable
-private fun EmptyProjectState(onCreateClick: () -> Unit) {
+private fun EmptyProjectState(onCreateClick: () -> Unit, canCreate: Boolean = true) {
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         EmptyState(
             title = "Belum ada project",
             body = "Kelola dana proyek kamu dari satu tempat.",
-            action = {
-                PrimaryButton(
-                    text = "Buat Project",
-                    onClick = onCreateClick,
-                    modifier = Modifier.fillMaxWidth(0.62f)
-                )
-            }
+            action = if (canCreate) {
+                {
+                    PrimaryButton(
+                        text = "Buat Project",
+                        onClick = onCreateClick,
+                        modifier = Modifier.fillMaxWidth(0.62f)
+                    )
+                }
+            } else null
         )
     }
 }

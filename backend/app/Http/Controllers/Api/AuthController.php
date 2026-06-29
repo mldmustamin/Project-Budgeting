@@ -70,4 +70,21 @@ class AuthController extends Controller
         ]);
     }
 
+    public function changePassword(Request $request): JsonResponse
+    {
+        $request->validate([
+            'password' => 'required|string|min:6',
+            'password_confirmation' => 'required|string|same:password',
+        ]);
+
+        $user = $request->user();
+
+        $user->password = Hash::make($request->password);
+        $user->password_change_required = false;
+        $user->save();
+
+        return response()->json([
+            'message' => 'Password changed successfully.',
+        ]);
+    }
 }

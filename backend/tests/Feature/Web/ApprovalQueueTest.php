@@ -17,6 +17,10 @@ class ApprovalQueueTest extends TestCase
     {
         parent::setUp();
         $this->seed(RolePermissionSeeder::class);
+        // Web approval tests use POST without CSRF token
+        $this->withoutMiddleware(
+            \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class
+        );
     }
 
     public function test_finance_manager_can_view_approval_queue(): void
@@ -151,10 +155,10 @@ class ApprovalQueueTest extends TestCase
         $response->assertSee('Device Sync Status');
     }
 
-    public function test_viewer_cannot_access_sync_monitor(): void
+    public function test_auditor_cannot_access_sync_monitor(): void
     {
         $user = User::factory()->create();
-        $user->assignRole('VIEWER');
+        $user->assignRole('AUDITOR');
 
         $response = $this->actingAs($user)->get('/sync');
 

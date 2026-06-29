@@ -14,11 +14,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -31,15 +34,24 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.fundsmanager.data.local.ActiveSession
+import com.example.fundsmanager.data.local.SessionManager
 import com.example.fundsmanager.ui.screen.home.HomeBottomBar
 import com.example.fundsmanager.ui.screen.home.HomeMenu
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,6 +65,11 @@ fun SettingsScreen(
 ) {
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context.applicationContext) }
+    val scope = rememberCoroutineScope()
+    val activeSession by produceState<ActiveSession?>(initialValue = null) {
+        value = sessionManager.activeSession.first()
+    }
     val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
     val versionName = packageInfo.versionName ?: "1.0"
     val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -95,9 +112,39 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
+            // User Info Card
+            activeSession?.let { session ->
+                Card(
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFF0F7FF)),
+                    border = BorderStroke(1.dp, Color(0xFFD5E6FF))
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(18.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .background(Color(0xFF238b45), RoundedCornerShape(16.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Person, contentDescription = null, tint = Color.White)
+                        }
+                        Spacer(Modifier.size(14.dp))
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(session.userName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.ExtraBold)
+                            Text(session.userEmail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(session.roles.joinToString(", "), style = MaterialTheme.typography.labelSmall, color = Color(0xFF238b45))
+                        }
+                    }
+                }
+            }
+
             Card(
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFEAF3FF)),
@@ -143,7 +190,10 @@ fun SettingsScreen(
                     uriHandler.openUri("https://wa.me/6285157109377?text=Halo%20Fiyya,%20saya%20ingin%20menghubungi%20developer%20Funds%20Manager.")
                 }
             )
+
             Spacer(modifier = Modifier.height(8.dp))
+
+            // Logout Card — always visible
             Card(
                 modifier = Modifier.fillMaxWidth().clickable(onClick = onLogoutClick),
                 shape = RoundedCornerShape(18.dp),
@@ -163,6 +213,9 @@ fun SettingsScreen(
                     )
                 }
             }
+
+            // Bottom spacer for nav bar clearance
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }

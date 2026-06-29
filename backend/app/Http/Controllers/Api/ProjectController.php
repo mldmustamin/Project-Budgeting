@@ -171,9 +171,9 @@ class ProjectController extends Controller
     {
         $user = $request->user();
 
-        if (! $user->hasRole(['OWNER', 'ADMIN'])) {
+        if (! $user->hasRole(['OWNER', 'ADMIN', 'FINANCE_MANAGER', 'SUPERVISOR'])) {
             throw ValidationException::withMessages([
-                'role' => ['Only OWNER or ADMIN can create or update projects.'],
+                'role' => ['Only OWNER, ADMIN, FINANCE_MANAGER, or SUPERVISOR can create or update projects.'],
             ]);
         }
     }

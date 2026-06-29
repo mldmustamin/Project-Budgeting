@@ -61,7 +61,7 @@ class DashboardTest extends TestCase
     public function test_user_can_view_projects(): void
     {
         $user = User::factory()->create();
-        $user->assignRole('VIEWER');
+        $user->assignRole('AUDITOR');
 
         Project::factory()->count(3)->create(['user_id' => $user->id]);
 
@@ -74,7 +74,7 @@ class DashboardTest extends TestCase
     public function test_user_can_view_transactions_with_filters(): void
     {
         $user = User::factory()->create();
-        $user->assignRole('VIEWER');
+        $user->assignRole('AUDITOR');
 
         $project = Project::factory()->create(['user_id' => $user->id]);
 
@@ -94,7 +94,7 @@ class DashboardTest extends TestCase
     public function test_user_can_view_transaction_detail(): void
     {
         $user = User::factory()->create();
-        $user->assignRole('VIEWER');
+        $user->assignRole('AUDITOR');
 
         $project = Project::factory()->create(['user_id' => $user->id]);
 

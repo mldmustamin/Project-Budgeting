@@ -41,9 +41,13 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,12 +57,14 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.example.fundsmanager.data.local.SessionManager
 import com.example.fundsmanager.domain.model.isIncome
 import com.example.fundsmanager.domain.model.toUiLabel
 import com.example.fundsmanager.ui.component.EmptyState
 import com.example.fundsmanager.ui.component.PrimaryButton
 import com.example.fundsmanager.ui.component.TypeBadge
 import com.example.fundsmanager.ui.component.formatRupiah
+import kotlinx.coroutines.flow.first
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,6 +81,12 @@ fun DashboardHomeScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
+    val context = LocalContext.current
+    val sessionManager = remember { SessionManager(context.applicationContext) }
+    val scope = rememberCoroutineScope()
+    val activeSession by produceState<com.example.fundsmanager.data.local.ActiveSession?>(initialValue = null) {
+        value = sessionManager.activeSession.first()
+    }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -96,11 +108,22 @@ fun DashboardHomeScreen(
                     }
                 },
                 title = {
-                    Text(
-                        "Dashboard",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.ExtraBold
-                    )
+                    Column {
+                        Text(
+                            "Dashboard",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        activeSession?.let { session ->
+                            Text(
+                                "${session.userName} • ${session.roles.joinToString(", ")}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
                 },
                 actions = {
                     IconButton(onClick = { viewModel.refreshDashboard(force = true) }) {

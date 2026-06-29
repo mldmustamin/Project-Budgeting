@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Allow cleartext HTTP only to our production server -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">103.94.11.78</domain>
+    </domain-config>
+    <!-- Block all other cleartext by default (Android 9+ default) -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

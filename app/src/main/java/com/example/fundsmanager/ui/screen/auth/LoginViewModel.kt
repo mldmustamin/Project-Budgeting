@@ -1,12 +1,19 @@
 package com.example.fundsmanager.ui.screen.auth
 
+import android.app.Application
 import android.os.Build
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.fundsmanager.data.local.SessionManager
+import com.example.fundsmanager.data.local.dao.UserDao
+import com.example.fundsmanager.data.local.entity.UserEntity
 import com.example.fundsmanager.data.remote.AuthRepository
 import com.example.fundsmanager.data.remote.DeviceRepository
 import com.example.fundsmanager.data.remote.LoginResponse
+import com.example.fundsmanager.data.sync.SyncWorker
 import com.example.fundsmanager.util.logging.AppLogCategory
 import com.example.fundsmanager.util.logging.AppLogger
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,7 +39,9 @@ class LoginViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val deviceRepository: DeviceRepository,
     private val sessionManager: SessionManager,
-    private val appLogger: AppLogger
+    private val appLogger: AppLogger,
+    private val userDao: UserDao,
+    private val application: Application,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -99,6 +108,15 @@ class LoginViewModel @Inject constructor(
             deviceUuid = localDeviceUuid
         )
 
+        // Insert current user into local Room database for FK integrity
+        val userEntity = UserEntity(
+            id = response.user.id,
+            name = response.user.name,
+            email = response.user.email,
+            uuid = response.user.uuid,
+        )
+        userDao.insertUser(userEntity)
+
         // Register device with backend
         deviceRepository.registerDevice(
             token = response.accessToken,
@@ -127,5 +145,14 @@ class LoginViewModel @Inject constructor(
                 message = error.message ?: "Device registration failed"
             )
         }
+
+        // Trigger immediate one-time sync after login
+        val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
+            .build()
+        WorkManager.getInstance(application).enqueueUniqueWork(
+            "fundsmanager_sync_now",
+            ExistingWorkPolicy.REPLACE,
+            syncRequest
+        )
     }
 }

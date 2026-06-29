@@ -294,10 +294,10 @@ class TransactionTest extends TestCase
             ->assertJsonPath('transactions.0.finance_status', 'CORRECTED');
     }
 
-    public function test_viewer_cannot_create_transaction(): void
+    public function test_auditor_cannot_create_transaction(): void
     {
         $user = User::factory()->create();
-        $user->assignRole('VIEWER');
+        $user->assignRole('AUDITOR');
 
         $project = Project::factory()->create();
 
