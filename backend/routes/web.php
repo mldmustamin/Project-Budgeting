@@ -90,6 +90,14 @@ Route::middleware('auth')->group(function () {
         Route::post('/users/{user}/reset-password', [UserWebController::class, 'resetPassword'])->name('web.users.reset-password');
     });
 
+    // Master Locations (ADMIN, SUPERVISOR)
+    Route::middleware('role:OWNER|ADMIN|SUPERVISOR')->group(function () {
+        Route::get('/locations', [App\Http\Controllers\Web\LocationWebController::class, 'index'])->name('web.locations.index');
+        Route::post('/locations', [App\Http\Controllers\Web\LocationWebController::class, 'store'])->name('web.locations.store');
+        Route::patch('/locations/{location}', [App\Http\Controllers\Web\LocationWebController::class, 'update'])->name('web.locations.update');
+        Route::delete('/locations/{location}', [App\Http\Controllers\Web\LocationWebController::class, 'destroy'])->name('web.locations.destroy');
+    });
+
     // Sync Monitor (ADMIN, OWNER)
     Route::middleware('role:OWNER|ADMIN')->group(function () {
         Route::get('/sync', [SyncMonitorController::class, 'index'])->name('web.sync.monitor');
