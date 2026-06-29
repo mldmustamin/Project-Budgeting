@@ -8,6 +8,7 @@ use App\Http\Controllers\Web\PeriodWebController;
 use App\Http\Controllers\Web\ProjectWebController;
 use App\Http\Controllers\Web\SyncMonitorController;
 use App\Http\Controllers\Web\TransactionWebController;
+use App\Http\Controllers\Web\BudgetWebController;
 use App\Http\Controllers\Web\SearchController;
 use App\Http\Controllers\Web\UserWebController;
 use Illuminate\Support\Facades\Route;
@@ -98,8 +99,60 @@ Route::middleware('auth')->group(function () {
         Route::delete('/locations/{location}', [App\Http\Controllers\Web\LocationWebController::class, 'destroy'])->name('web.locations.destroy');
     });
 
+    // Budget Request Workflow (Web)
+    Route::middleware('role:SUPERVISOR')->group(function () {
+        Route::get('/budget/inbox', [App\Http\Controllers\Web\BudgetWebController::class, 'inbox'])->name('web.budget.inbox');
+        Route::post('/budget/{task}/forward', [App\Http\Controllers\Web\BudgetWebController::class, 'forward'])->name('web.budget.forward');
+    });
+    Route::middleware('role:SUPERVISOR|OWNER')->group(function () {
+        Route::post('/budget/{task}/reject', [App\Http\Controllers\Web\BudgetWebController::class, 'reject'])->name('web.budget.reject');
+    });
+    Route::middleware('role:OWNER')->group(function () {
+        Route::get('/budget/approval', [App\Http\Controllers\Web\BudgetWebController::class, 'approvalList'])->name('web.budget.approval');
+        Route::post('/budget/{task}/approve', [App\Http\Controllers\Web\BudgetWebController::class, 'approve'])->name('web.budget.approve');
+    });
+    Route::middleware('role:ADMIN|FINANCE_MANAGER')->group(function () {
+        Route::get('/budget/verification', [App\Http\Controllers\Web\BudgetWebController::class, 'verificationList'])->name('web.budget.verification');
+        Route::post('/budget/{task}/verify', [App\Http\Controllers\Web\BudgetWebController::class, 'verify'])->name('web.budget.verify');
+    });
+    Route::middleware('role:FINANCE_MANAGER')->group(function () {
+        Route::post('/budget/{task}/reconcile', [App\Http\Controllers\Web\BudgetWebController::class, 'reconcile'])->name('web.budget.reconcile');
+    });
+
     // Sync Monitor (ADMIN, OWNER)
     Route::middleware('role:OWNER|ADMIN')->group(function () {
         Route::get('/sync', [SyncMonitorController::class, 'index'])->name('web.sync.monitor');
+    });
+
+    // ──────────────────────────────────────────
+    // Budget Workflow Routes
+    // ──────────────────────────────────────────
+
+    // Supervisor Inbox (SUPERVISOR only)
+    Route::middleware('role:SUPERVISOR')->group(function () {
+        Route::get('/budget/inbox', [BudgetWebController::class, 'inbox'])->name('web.budget.inbox');
+        Route::post('/budget/{task}/forward', [BudgetWebController::class, 'forward'])->name('web.budget.forward');
+    });
+
+    // Reject (SUPERVISOR or OWNER)
+    Route::middleware('role:SUPERVISOR|OWNER')->group(function () {
+        Route::post('/budget/{task}/reject', [BudgetWebController::class, 'reject'])->name('web.budget.reject');
+    });
+
+    // Owner Approval (OWNER only)
+    Route::middleware('role:OWNER')->group(function () {
+        Route::get('/budget/approval', [BudgetWebController::class, 'approvalList'])->name('web.budget.approval');
+        Route::post('/budget/{task}/approve', [BudgetWebController::class, 'approve'])->name('web.budget.approve');
+    });
+
+    // Finance Verification (ADMIN or FINANCE_MANAGER)
+    Route::middleware('role:ADMIN|FINANCE_MANAGER')->group(function () {
+        Route::get('/budget/verification', [BudgetWebController::class, 'verificationList'])->name('web.budget.verification');
+        Route::post('/budget/{task}/verify', [BudgetWebController::class, 'verify'])->name('web.budget.verify');
+    });
+
+    // Reconcile (FINANCE_MANAGER only)
+    Route::middleware('role:FINANCE_MANAGER')->group(function () {
+        Route::post('/budget/{task}/reconcile', [BudgetWebController::class, 'reconcile'])->name('web.budget.reconcile');
     });
 });

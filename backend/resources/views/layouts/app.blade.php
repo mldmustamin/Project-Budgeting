@@ -32,6 +32,17 @@
 
             <x-web-nav-item href="{{ route('web.transactions.index') }}" icon="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" label="Transaksi" />
 
+            {{-- Budget Workflow Links --}}
+            @if(auth()->user()?->hasRole('SUPERVISOR'))
+            <x-web-nav-item href="{{ route('web.budget.inbox') }}" icon="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" label="Budget Inbox" badge="{{ \App\Models\TaskExpense::where('stage','ESTIMASI')->whereNull('deleted_at')->count() }}" badgeColor="bg-blue-500" />
+            @endif
+            @if(auth()->user()?->hasRole('OWNER'))
+            <x-web-nav-item href="{{ route('web.budget.approval') }}" icon="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" label="Budget Approval" badge="{{ \App\Models\TaskExpense::where('stage','FORWARDED')->whereNull('deleted_at')->count() }}" badgeColor="bg-amber-500" />
+            @endif
+            @if(auth()->user()?->hasRole(['ADMIN','FINANCE_MANAGER']))
+            <x-web-nav-item href="{{ route('web.budget.verification') }}" icon="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" label="Budget Verify" badge="{{ \App\Models\TaskExpense::where('stage','REALISASI')->whereNull('deleted_at')->count() }}" badgeColor="bg-indigo-500" />
+            @endif
+
             @if(auth()->user()?->hasRole(['OWNER','ADMIN','FINANCE_MANAGER']))
             <x-web-nav-item href="{{ route('web.approval.index') }}" icon="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" label="Approval" badge="{{ \App\Models\Transaction::where('approval_status','PENDING')->whereNull('deleted_at')->count() }}" badgeColor="bg-amber-500" />
             @endif
