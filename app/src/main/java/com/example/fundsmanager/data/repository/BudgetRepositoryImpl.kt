@@ -2,6 +2,9 @@ package com.example.fundsmanager.data.repository
 
 import com.example.fundsmanager.data.local.SessionManager
 import com.example.fundsmanager.data.local.dao.*
+import com.example.fundsmanager.data.local.entity.BudgetTemplateEntity
+import com.example.fundsmanager.data.local.entity.MasterLocationEntity
+import com.example.fundsmanager.data.local.entity.TaskExpenseEntity
 import com.example.fundsmanager.data.mapper.*
 import com.example.fundsmanager.data.remote.ApiConfig
 import com.example.fundsmanager.data.sync.SyncOutboxRepository

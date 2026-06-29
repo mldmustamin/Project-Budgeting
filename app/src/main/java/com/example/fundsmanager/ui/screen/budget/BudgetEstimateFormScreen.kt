@@ -1,5 +1,6 @@
 package com.example.fundsmanager.ui.screen.budget
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -11,10 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.example.fundsmanager.domain.model.BudgetTemplate
-import com.example.fundsmanager.domain.model.MasterLocation
-import com.example.fundsmanager.ui.component.AppDropdownField
-import com.example.fundsmanager.ui.component.MoneyInputField
+import java.text.NumberFormat
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,230 +22,146 @@ fun BudgetEstimateFormScreen(
     onBack: () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val currencyFormat = remember { NumberFormat.getNumberInstance(Locale("id", "ID")) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("Estimasi Budget") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "Kembali")
-                    }
-                },
-                actions = {
-                    if (uiState.isSaving) {
-                        CircularProgressIndicator(modifier = Modifier.padding(16.dp))
-                    }
+                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Kembali") }
                 }
             )
         },
         bottomBar = {
-            BottomBar(viewModel, uiState)
+            Surface(shadowElevation = 8.dp) {
+                Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = viewModel::saveDraft, modifier = Modifier.weight(1f)) {
+                        Text(if (uiState.savedTask != null) "Update" else "Simpan")
+                    }
+                    Button(
+                        onClick = { viewModel.saveDraft() },
+                        modifier = Modifier.weight(1f),
+                        enabled = uiState.taskNo.isNotBlank() && uiState.vid.isNotBlank()
+                    ) { Text("Submit") }
+                }
+            }
         }
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp)
+            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp)
         ) {
-            // Task Info Section
             Text("Data Task", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
 
-            OutlinedTextField(
-                value = uiState.taskNo,
-                onValueChange = viewModel::updateTaskNo,
-                label = { Text("Task No") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(uiState.taskNo, viewModel::updateTaskNo, label = { Text("Task No") }, modifier = Modifier.fillMaxWidth())
+            Spacer(Modifier.height(6.dp))
+            OutlinedTextField(uiState.vid, viewModel::updateVid, label = { Text("VID") }, modifier = Modifier.fillMaxWidth())
+            Spacer(Modifier.height(6.dp))
 
-            OutlinedTextField(
-                value = uiState.vid,
-                onValueChange = viewModel::updateVid,
-                label = { Text("VID") },
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Job Type Dropdown
-            AppDropdownField(
-                label = "Jenis Pekerjaan",
-                value = uiState.jobType,
-                options = listOf("INSTALASI", "RELOKASI", "PMCM", "DISMANTLE", "SURVEY"),
-                onValueChange = viewModel::updateJobType
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Location Dropdown
-            AppDropdownField(
-                label = "Lokasi",
-                value = uiState.locations.find { it.id == uiState.locationId }?.remoteName ?: "Pilih Lokasi",
-                options = uiState.locations.map { it.remoteName },
-                onValueChange = { name ->
-                    val loc = uiState.locations.find { it.remoteName == name }
-                    viewModel.updateLocation(loc?.id)
-                }
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Pagu warnings
-            if (uiState.paguWarnings.isNotEmpty()) {
-                uiState.paguWarnings.forEach { warning ->
-                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
-                        Text(warning, modifier = Modifier.padding(8.dp), color = MaterialTheme.colorScheme.onErrorContainer)
+            // Job Type
+            var jobExpanded by remember { mutableStateOf(false) }
+            ExposedDropdownMenuBox(jobExpanded, { jobExpanded = it }) {
+                OutlinedTextField(
+                    uiState.jobType, {}, readOnly = true, label = { Text("Jenis Pekerjaan") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(jobExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                )
+                ExposedDropdownMenu(jobExpanded, { jobExpanded = false }) {
+                    listOf("INSTALASI", "RELOKASI", "PMCM", "DISMANTLE", "SURVEY").forEach { job ->
+                        DropdownMenuItem(text = { Text(job) }, onClick = { viewModel.updateJobType(job); jobExpanded = false })
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
                 }
             }
+            Spacer(Modifier.height(6.dp))
 
-            // Items Section
-            Text("Item Budget", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(8.dp))
+            // Location
+            var locExpanded by remember { mutableStateOf(false) }
+            val locName = uiState.locations.find { it.id == uiState.locationId }?.remoteName ?: "Pilih Lokasi"
+            ExposedDropdownMenuBox(locExpanded, { locExpanded = it }) {
+                OutlinedTextField(
+                    locName, {}, readOnly = true, label = { Text("Lokasi") },
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(locExpanded) },
+                    modifier = Modifier.fillMaxWidth().menuAnchor()
+                )
+                ExposedDropdownMenu(locExpanded, { locExpanded = false }) {
+                    uiState.locations.forEach { loc ->
+                        DropdownMenuItem(text = { Text(loc.remoteName) }, onClick = { viewModel.updateLocation(loc.id); locExpanded = false })
+                    }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+
+            // Items
+            Text("Item Budget (${uiState.items.size})", style = MaterialTheme.typography.titleMedium)
+            Spacer(Modifier.height(8.dp))
 
             uiState.items.forEachIndexed { index, item ->
-                ItemCard(
-                    index = index,
-                    item = item,
-                    templates = uiState.templates,
-                    onFieldChange = { field, value -> viewModel.updateItem(index, field, value) },
-                    onRemove = { viewModel.removeItem(index) },
-                    canRemove = uiState.items.size > 1
-                )
-                Spacer(modifier = Modifier.height(8.dp))
+                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                    Column(Modifier.padding(12.dp)) {
+                        Text("Item #${index + 1}", style = MaterialTheme.typography.titleSmall)
+
+                        // Template dropdown
+                        var tplExpanded by remember { mutableStateOf(false) }
+                        val tplName = uiState.templates.find { it.id == item.templateId }?.categoryName ?: "Pilih Kategori"
+                        ExposedDropdownMenuBox(tplExpanded, { tplExpanded = it }) {
+                            OutlinedTextField(tplName, {}, readOnly = true, label = { Text("Kategori") },
+                                modifier = Modifier.fillMaxWidth().menuAnchor())
+                            ExposedDropdownMenu(tplExpanded, { tplExpanded = false }) {
+                                uiState.templates.forEach { tpl ->
+                                    DropdownMenuItem(text = {
+                                        Text("${tpl.categoryName} (${tpl.paguType})")
+                                    }, onClick = {
+                                        viewModel.updateItem(index, "templateId", tpl.id.toString())
+                                        tplExpanded = false
+                                    })
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(4.dp))
+
+                        // Pagu info
+                        item.templateId?.let { tid ->
+                            uiState.templates.find { it.id == tid }?.let { tpl ->
+                                if (tpl.paguAmount != null) {
+                                    Text("Pagu: Rp ${currencyFormat.format(tpl.paguAmount)}", style = MaterialTheme.typography.labelSmall)
+                                }
+                                if (tpl.requiresBill) {
+                                    Text("⚠ Wajib bukti fisik", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+                                }
+                            }
+                        }
+
+                        OutlinedTextField(
+                            item.estimatedAmount, { viewModel.updateItem(index, "estimatedAmount", it) },
+                            label = { Text("Estimasi (Rp)") }, modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        OutlinedTextField(
+                            item.tanggal, { viewModel.updateItem(index, "tanggal", it) },
+                            label = { Text("Tanggal (yyyy-MM-dd)") }, modifier = Modifier.fillMaxWidth()
+                        )
+
+                        if (uiState.items.size > 1) {
+                            TextButton(onClick = { viewModel.removeItem(index) }) {
+                                Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)
+                                Text("Hapus", color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                    }
+                }
             }
 
-            // Add Item Button
-            OutlinedButton(
-                onClick = viewModel::addItem,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.Add, null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Tambah Item")
+            OutlinedButton(onClick = viewModel::addItem, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Default.Add, null); Text("Tambah Item")
             }
 
             // Total
-            Spacer(modifier = Modifier.height(16.dp))
             val total = uiState.items.sumOf { it.estimatedAmount.toLongOrNull() ?: 0 }
-            Text(
-                "Total Estimasi: Rp ${"%,d".format(total)}",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
+            Text("Total: Rp ${currencyFormat.format(total)}", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
 
-            // Error
-            uiState.error?.let { error ->
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(error, color = MaterialTheme.colorScheme.error)
-            }
-
-            Spacer(modifier = Modifier.height(80.dp))
-        }
-    }
-}
-
-@Composable
-fun ItemCard(
-    index: Int,
-    item: ExpenseItemDraft,
-    templates: List<BudgetTemplate>,
-    onFieldChange: (String, String) -> Unit,
-    onRemove: () -> Unit,
-    canRemove: Boolean
-) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Item #${index + 1}", style = MaterialTheme.typography.titleSmall)
-                if (canRemove) {
-                    IconButton(onClick = onRemove) {
-                        Icon(Icons.Default.Delete, "Hapus", tint = MaterialTheme.colorScheme.error)
-                    }
-                }
-            }
-
-            // Template dropdown
-            AppDropdownField(
-                label = "Kategori",
-                value = templates.find { it.id == item.templateId }?.categoryName ?: "Pilih Kategori",
-                options = templates.map { "${it.categoryName} (${it.paguType})" },
-                onValueChange = { selected ->
-                    val tpl = templates.find { "${it.categoryName} (${it.paguType})" == selected }
-                    onFieldChange("templateId", tpl?.id?.toString() ?: "")
-                }
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Show pagu info if template selected
-            item.templateId?.let { tid ->
-                templates.find { it.id == tid }?.let { tpl ->
-                    tpl.paguAmount?.let { pagu ->
-                        Text("Pagu: Rp ${"%,d".format(pagu)} (${tpl.paguType})",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.outline)
-                    }
-                    if (tpl.requiresBill) {
-                        Text("⚠ Wajib bukti fisik",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.error)
-                    }
-                }
-            }
-
-            // Amount
-            MoneyInputField(
-                value = item.estimatedAmount,
-                onValueChange = { onFieldChange("estimatedAmount", it) },
-                label = "Estimasi (Rp)",
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = item.tanggal,
-                onValueChange = { onFieldChange("tanggal", it) },
-                label = { Text("Tanggal (yyyy-MM-dd)") },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-    }
-}
-
-@Composable
-fun BottomBar(viewModel: BudgetEstimateViewModel, uiState: BudgetEstimateUiState) {
-    Surface(
-        shadowElevation = 8.dp,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            OutlinedButton(
-                onClick = viewModel::saveDraft,
-                enabled = !uiState.isSaving && uiState.isDirty,
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(if (uiState.savedTask != null) "Update" else "Simpan Draft")
-            }
-            Button(
-                onClick = {
-                    viewModel.saveDraft()
-                    // TODO: navigate to submit confirmation
-                },
-                enabled = !uiState.isSaving && uiState.taskNo.isNotBlank() && uiState.vid.isNotBlank(),
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Submit")
-            }
+            uiState.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            Spacer(Modifier.height(80.dp))
         }
     }
 }
