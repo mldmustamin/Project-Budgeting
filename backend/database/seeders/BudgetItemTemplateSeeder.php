@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\BudgetItemTemplate;
+use App\Models\PaguJobTypeAmount;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
@@ -61,5 +62,60 @@ class BudgetItemTemplateSeeder extends Seeder
         }
 
         echo "Seeded " . count($templates) . " budget item templates\n";
+
+        // Seed per-job-type amounts
+        $this->seedPaguAmounts();
+    }
+
+    private function seedPaguAmounts(): void
+    {
+        // Mapping: category_group → [job_type => amount]
+        // Amounts from the official pagu table. null = not applicable.
+        $amounts = [
+            'PAKET_LK' => [
+                'INSTALASI' => 120000, 'RELOKASI' => 120000, 'PMCM' => 120000,
+                'DISMANTLE' => 120000, 'SURVEY' => 120000,
+            ],
+            'HOTEL_LK' => [
+                'INSTALASI' => 200000, 'RELOKASI' => 200000, 'PMCM' => 200000,
+                'DISMANTLE' => 200000, 'SURVEY' => 200000,
+            ],
+            'HOTEL_PAPUA' => [
+                'INSTALASI' => 275000, 'RELOKASI' => 275000, 'PMCM' => 275000,
+                'DISMANTLE' => 275000, 'SURVEY' => 275000,
+            ],
+            'VOUCHER_HP' => [
+                'INSTALASI' => 15000, 'RELOKASI' => 15000, 'PMCM' => 15000,
+                'DISMANTLE' => 5000, 'SURVEY' => 5000,
+            ],
+            'BURUH' => [
+                'INSTALASI' => 120000, 'RELOKASI' => 120000,
+                'PMCM' => null, 'DISMANTLE' => null, 'SURVEY' => null,
+            ],
+            'BALLAST' => [
+                'INSTALASI' => 200000, 'RELOKASI' => 200000,
+                'PMCM' => null, 'DISMANTLE' => null, 'SURVEY' => null,
+            ],
+            'FEE_PEKERJAAN' => [
+                'INSTALASI' => 40000, 'RELOKASI' => 75000, 'PMCM' => 15000,
+                'DISMANTLE' => 15000, 'SURVEY' => null,
+            ],
+        ];
+
+        $count = 0;
+        foreach ($amounts as $categoryGroup => $jobTypeAmounts) {
+            $template = BudgetItemTemplate::where('category_group', $categoryGroup)->first();
+            if (!$template) continue;
+
+            foreach ($jobTypeAmounts as $jobType => $amount) {
+                PaguJobTypeAmount::firstOrCreate(
+                    ['template_id' => $template->id, 'job_type' => $jobType],
+                    ['amount' => $amount]
+                );
+                $count++;
+            }
+        }
+
+        echo "Seeded {$count} pagu job type amounts\n";
     }
 }

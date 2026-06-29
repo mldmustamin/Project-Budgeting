@@ -105,7 +105,7 @@ class MasterLocationController extends Controller
             ->whereIn('stage', ['APPROVED', 'REALISASI', 'VERIFIED', 'RECONCILED'])
             ->with(['submittedBy:id,name', 'approvedBy:id,name'])
             ->orderBy('created_at', 'desc')
-            ->limit(10)
+            ->limit(config('budget.location_history_limit', 10))
             ->get(['id', 'uuid', 'task_no', 'job_type', 'stage', 'total_approved',
                    'total_realization', 'submitted_by', 'approved_by', 'created_at']);
 

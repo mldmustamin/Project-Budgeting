@@ -41,6 +41,18 @@ class BudgetItemTemplate extends Model
         return $this->hasMany(ExpenseItem::class, 'template_id');
     }
 
+    public function paguAmounts(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(PaguJobTypeAmount::class, 'template_id');
+    }
+
+    // Get pagu amount for a specific job type
+    public function getAmountForJobType(string $jobType): ?int
+    {
+        $amount = $this->paguAmounts()->forJobType($jobType)->first();
+        return $amount?->amount;
+    }
+
     // Scope: active templates
     public function scopeActive($query)
     {

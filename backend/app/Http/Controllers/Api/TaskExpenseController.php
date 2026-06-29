@@ -48,7 +48,7 @@ class TaskExpenseController extends Controller
             $query->where('project_id', $projectId);
         }
 
-        $tasks = $query->orderBy('created_at', 'desc')->paginate(20);
+        $tasks = $query->orderBy('created_at', 'desc')->paginate(config('budget.pagination_per_page', 20));
 
         return response()->json($tasks);
     }
@@ -86,9 +86,10 @@ class TaskExpenseController extends Controller
         $user = $request->user();
 
         // Max 5 drafts enforcement
-        if (TaskExpense::draftCountForUser($user) >= 5) {
+        $maxDrafts = config('budget.max_drafts_per_user', 5);
+        if (TaskExpense::draftCountForUser($user) >= $maxDrafts) {
             return response()->json([
-                'message' => 'Maksimal 5 draft. Harap hapus atau selesaikan draft yang ada.',
+                'message' => "Maksimal {$maxDrafts} draft. Harap hapus atau selesaikan draft yang ada.",
             ], 422);
         }
 
@@ -382,7 +383,7 @@ class TaskExpenseController extends Controller
      */
     public function reject(Request $request, TaskExpense $taskExpense): JsonResponse
     {
-        $allowedStages = [TaskExpense::STAGE_ESTIMASI, TaskExpense::STAGE_FORWARDED];
+        $allowedStages = config('budget.rejectable_stages', ['ESTIMASI', 'FORWARDED']);
         if (!in_array($taskExpense->stage, $allowedStages)) {
             return response()->json(['message' => 'Hanya task ESTIMASI atau FORWARDED yang bisa direject'], 422);
         }
