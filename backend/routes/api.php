@@ -2,12 +2,16 @@
 
 use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BudgetItemTemplateController;
 use App\Http\Controllers\Api\DeviceController;
+use App\Http\Controllers\Api\MasterEquipmentOptionController;
+use App\Http\Controllers\Api\MasterLocationController;
 use App\Http\Controllers\Api\PeriodController;
 use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\SyncChangesController;
 use App\Http\Controllers\Api\SyncPushController;
 use App\Http\Controllers\Api\SyncStatusController;
+use App\Http\Controllers\Api\TaskExpenseController;
 use App\Http\Controllers\Api\TransactionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -85,3 +89,41 @@ Route::prefix('v1/sync')->middleware('auth:sanctum')->group(function () {
 
 // Health check (public)
 Route::get('/health', fn () => response()->json(['status' => 'ok']));
+
+// Budget Item Templates — Sanctum protected
+Route::prefix('v1/budget-templates')->middleware('auth:sanctum')->group(function () {
+    Route::get('/', [BudgetItemTemplateController::class, 'index']);
+});
+
+// Equipment Options — Sanctum protected
+Route::prefix('v1/equipment-options')->middleware('auth:sanctum')->group(function () {
+    Route::get('/', [MasterEquipmentOptionController::class, 'index']);
+});
+
+// Master Locations — Sanctum protected
+Route::prefix('v1')->middleware('auth:sanctum')->group(function () {
+    Route::get('/projects/{project}/locations', [MasterLocationController::class, 'index']);
+    Route::post('/projects/{project}/locations', [MasterLocationController::class, 'store']);
+    Route::get('/locations/{location}', [MasterLocationController::class, 'show']);
+    Route::put('/locations/{location}', [MasterLocationController::class, 'update']);
+    Route::delete('/locations/{location}', [MasterLocationController::class, 'destroy']);
+    Route::get('/locations/{location}/history', [MasterLocationController::class, 'history']);
+});
+
+// Task Expenses — Sanctum protected
+Route::prefix('v1/task-expenses')->middleware('auth:sanctum')->group(function () {
+    Route::get('/', [TaskExpenseController::class, 'index']);
+    Route::post('/', [TaskExpenseController::class, 'store']);
+    Route::get('/{taskExpense}', [TaskExpenseController::class, 'show']);
+    Route::put('/{taskExpense}', [TaskExpenseController::class, 'update']);
+    Route::delete('/{taskExpense}', [TaskExpenseController::class, 'destroy']);
+    // Stage transitions
+    Route::post('/{taskExpense}/submit', [TaskExpenseController::class, 'submit']);
+    Route::post('/{taskExpense}/forward', [TaskExpenseController::class, 'forward']);
+    Route::post('/{taskExpense}/approve', [TaskExpenseController::class, 'approve']);
+    Route::post('/{taskExpense}/reject', [TaskExpenseController::class, 'reject']);
+    Route::post('/{taskExpense}/realize', [TaskExpenseController::class, 'realize']);
+    Route::post('/{taskExpense}/verify', [TaskExpenseController::class, 'verify']);
+    Route::post('/{taskExpense}/reconcile', [TaskExpenseController::class, 'reconcile']);
+    Route::get('/{taskExpense}/histories', [TaskExpenseController::class, 'histories']);
+});
