@@ -395,3 +395,19 @@ FIELD_ENGINEER, PIC, AUDITOR, VIEWER tetap hanya bisa read / create transaction 
 | ADMIN | Rekonsiliasi data realisasi bersama Finance Manager |
 | SUPERVISOR | Submit budget request ke Manager, approve transaksi tim |
 | **File diubah** | `docs/09_RBAC_SECURITY.md` — section "Pembagian Wewenang Kunci" + permission matrix |
+
+---
+
+## 29. Code Review — Findings & Fixes
+
+| # | Severity | Issue | Status |
+|---|----------|-------|--------|
+| 1-7 | CRITICAL | No role checks on 7 write endpoints | FIXED |
+| 8 | BUG | Pagu enforcement missing | FIXED |
+| 9 | BUG | Race condition (optimistic locking) | FIXED |
+| 10-14 | BUG | verify() nullable, dead code, N+1, notes overwrite | FIXED |
+| 15-17 | MISSING | Security/pagu tests | FIXED — 4 new tests |
+| 18-22 | QUALITY | Controller size, duplication | NOTED |
+
+### Tests: 15 tests, 51 assertions — ALL PASS
+### OPEN_QNA: +10 questions (Q31-Q40)
