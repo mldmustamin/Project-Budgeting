@@ -87,3 +87,80 @@ data class Attachment(
     val lastSyncedAt: Long? = null,
     val createdAt: Long
 )
+
+// === Budget Request Domain Models ===
+
+data class BudgetTask(
+    val id: Long = 0,
+    val uuid: String = "",
+    val projectId: Long,
+    val locationId: Long? = null,
+    val taskNo: String,
+    val vid: String,
+    val taskName: String? = null,
+    val remoteName: String? = null,
+    val jobType: String,
+    val stage: String = "DRAFT",
+    val submittedBy: Long,
+    val forwardedBy: Long? = null,
+    val approvedBy: Long? = null,
+    val verifiedBy: Long? = null,
+    val reconciledBy: Long? = null,
+    val totalEstimated: Long = 0,
+    val totalRevised: Long = 0,
+    val totalApproved: Long = 0,
+    val totalRealization: Long = 0,
+    val rejectionReason: String? = null,
+    val notes: String? = null,
+    val completedAt: Long? = null,
+    val deadlineAt: Long? = null,
+    val syncStatus: String = "PENDING",
+    val lastSyncedAt: Long? = null,
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis()
+)
+
+data class ExpenseItemModel(
+    val id: Long = 0,
+    val uuid: String = "",
+    val taskExpenseId: Long = 0,
+    val templateId: Long? = null,
+    val tanggal: String,
+    val note: String? = null,
+    val estimatedAmount: Long = 0,
+    val revisedAmount: Long? = null,
+    val approvedAmount: Long? = null,
+    val realizationAmount: Long? = null,
+    val buktiPath: String? = null,
+    val requiresBill: Boolean = false,
+    val billVerified: Boolean = false,
+    val itemStatus: String = "DRAFT",
+    val rejectionReason: String? = null,
+    val sortOrder: Int = 0
+)
+
+data class BudgetTemplate(
+    val id: Long = 0,
+    val uuid: String,
+    val categoryName: String,
+    val categoryGroup: String,
+    val paguType: String,
+    val paguAmount: Long? = null,
+    val paguNote: String? = null,
+    val requiresBill: Boolean = false,
+    val billNote: String? = null,
+    val displayOrder: Int = 0,
+    val isActive: Boolean = true
+)
+
+data class MasterLocation(
+    val id: Long = 0,
+    val uuid: String,
+    val projectId: Long,
+    val remoteName: String,
+    val address: String,
+    val provinsi: String? = null,
+    val kotaKab: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null
+)
