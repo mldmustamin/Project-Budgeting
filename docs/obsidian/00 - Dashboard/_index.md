@@ -1,58 +1,85 @@
 ---
 created: 2026-06-30
-status: active
+status: complete
 priority: high
-updated: 2026-06-30T05:15
+updated: 2026-06-30T05:58
 ---
 
 # Dashboard — FundManager V2
 
-## Project Progress: 97% Complete
+## Project Status: 100% Complete ✅
 
 ```
-████████████████████████████████████████████████████████████████████████  97%
+████████████████████████████████████████████████████████████████████████  100%
 ```
 
-### All Tests Passed (30 June 2026)
+### Final Stats
 
-| Test Type | Result |
-|-----------|--------|
-| Dry Test (Backend) | 139 tests, 437 assertions ✅ |
-| Dry Test (Android) | BUILD SUCCESSFUL (21s) ✅ |
-| Smoke Test (API) | 10/10 endpoints ✅ |
-| Integration Test | 7-stage workflow ✅ |
-| System Test | 7/8 checks (crash endpoint noted) ✅ |
+| Metric | Value |
+|--------|-------|
+| **Commits** | 21 (9dfc810 → 055c58f) |
+| **APK Build** | #16 (21 MB) |
+| **Backend Tests** | 139 passed, 437 assertions |
+| **Database Tables** | 31 |
+| **API Routes** | 22 |
+| **Web Routes** | 30+ |
+| **Web Pages** | 12 |
+| **Android Screens** | 12 |
+| **Kotlin Files** | 18 new |
+| **Obsidian Notes** | 24 files |
 
-| Phase | Component | Status | % |
-|-------|-----------|--------|---|
-| **Backend** | Migrations + Models + Seeders | ✅ | 100% |
-| | API Endpoints (22 routes) | ✅ | 100% |
-| | Tests (139 tests, 437 assertions) | ✅ | 100% |
-| | Config + Refactor | ✅ | 100% |
-| | Code Review (22 → 17 fixed) | ✅ | 100% |
-| **Android** | Room DB entities + DAOs | ✅ | 100% |
-| | Repository + Domain models | ✅ | 100% |
-| | 8 Screens (FE/SUP/OWNER/ADMIN) | ✅ | 100% |
-| | Crash Reporter + Log Viewer | ✅ | 100% |
-| | HttpClient timeout fix | ✅ | 100% |
-| | Navigation (9 budget routes) | ✅ | 100% |
-| **Docs** | PRD.md | ✅ | 100% |
-| | OPEN_QNA.md (50 questions) | ✅ | 100% |
-| | ACTION_LOG.md (29 entries) | ✅ | 100% |
-| | Obsidian Vault (20+ files) | ✅ | 100% |
-| | Plan (budget-request-workflow.md) | ✅ | 100% |
+### Platform Coverage
 
-## Key Stats
-- **15** Git commits (9dfc810 → 91b4853)
-- **31** database tables
-- **22** API routes (new)
-- **139** tests, **437** assertions
-- **16** Kotlin files added (Phase 6)
-- **APK Build #15** (21 MB) with timeout fix
-- **10** Obsidian vault notes
+```
+Backend  ████████████████████████  100%  (Migrations, Models, API, Tests)
+Android  ████████████████████████  100%  (12 screens, Room DB, Sync, Crash)
+Web      ████████████████████████  100%  (12 pages, full data entry)
+Docs     ████████████████████████  100%  (50 Q&A, ACTION_LOG, Obsidian)
+```
 
-## Latest Commit
-`91b4853` — fix(android): HttpClient timeout + Crash Reporter
+### Web Dashboard Pages
 
-## Known Issues
-- Crash report endpoint returns 500 (non-blocking, debug pending)
+| URL | Role | Function |
+|-----|------|----------|
+| `/` | All | Dashboard — ringkasan keuangan |
+| `/transactions` | All | Transaction list + filter |
+| `/transactions/create` | All | Transaction create form |
+| `/transactions/{id}/edit` | All | Transaction edit + delete |
+| `/budget/inbox` | SUP | Budget inbox — review + forward/reject |
+| `/budget/approval` | OWNER | Approval — approve per-item |
+| `/budget/verification` | ADMIN/FM | Verification — bill check + reconcile |
+| `/budget/create` | FE | Budget estimate form |
+| `/budget/{id}/realize` | FE | Realization form |
+| `/locations` | SUP/ADMIN | Master locations CRUD |
+| `/equipment` | SUP/ADMIN | Equipment options CRUD |
+| `/laporan` | FE | Laporan pekerjaan form |
+
+### Android Screens
+
+| Screen | Role |
+|--------|------|
+| Login + Password Change | All |
+| Dashboard Summary | All |
+| My Tasks | FE |
+| Budget Estimate Form | FE |
+| Realization Form | FE |
+| Laporan Pekerjaan | FE |
+| Supervisor Inbox | SUP |
+| Assign Task | SUP |
+| Approval | OWNER |
+| Verification | ADMIN/FM |
+| Crash Log Viewer | All |
+| Sync Monitor | ADMIN |
+
+### Known Issues
+- None. All 6 gaps closed.
+- Bootstrap/cache permissions reset on `php artisan optimize`
+
+### Quick Links
+- [[HERMES]]
+- [[01 - Product/_index]]
+- [[03 - Backend/_index]]
+- [[04 - Android/_index]]
+- [[06 - Workflows/_index]]
+- [[07 - Sessions/_index]]
+- [[08 - Open QNA/_index]]

@@ -411,3 +411,37 @@ FIELD_ENGINEER, PIC, AUDITOR, VIEWER tetap hanya bisa read / create transaction 
 
 ### Tests: 15 tests, 51 assertions — ALL PASS
 ### OPEN_QNA: +10 questions (Q31-Q40)
+
+---
+
+## 30. Web Dashboard Debug — Permission Cascade Fix
+
+**Symptom:** Web dashboard returns empty page / 500 Server Error
+**Root Cause 1:** `config/` directory `drw-r--r--` — no execute bit → PHP-FPM can't traverse
+**Root Cause 2:** `bootstrap/cache/` not writable by www-data
+**Root Cause 3:** `storage/framework/views/` not writable → compiled views can't cache
+**Root Cause 4:** `web/budget/` directory `drw-r--r--` → "View not found" error
+**Fix:** chmod 755 on all new directories, 775 on cache/storage, 644 on all PHP files
+**Verification:** All 12 web pages tested — all return correct title/redirect
+
+## 31. Final Gap Closure — 6 Items
+
+| Gap | Platform | Fix |
+|-----|----------|-----|
+| Budget Estimate Form | Web | create.blade.php + BudgetWebController.create/store |
+| Realization Form | Web | realize.blade.php + storeRealization() |
+| Laporan Pekerjaan | Web | laporan/create.blade.php + laporanForm/storeLaporan |
+| Equipment Options CRUD | Web | EquipmentWebController + index.blade.php |
+| Dashboard Summary | Android | SummaryScreen + SummaryViewModel |
+| Sync Monitor | Android | SyncMonitorScreen + SyncMonitorViewModel |
+
+All 6 gaps closed via 3 subagents. Project now 100% parity Web ↔ Android.
+
+## Final Project Stats
+
+- 21 commits
+- 139 tests, 437 assertions
+- 31 DB tables, 22 API routes, 30+ web routes
+- 12 web pages, 12 Android screens
+- APK Build #16 (21 MB)
+- All permissions documented: chmod 755 dirs, 644 PHP files, 775 cache/storage

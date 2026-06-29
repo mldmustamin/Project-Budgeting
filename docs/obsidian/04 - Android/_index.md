@@ -1,46 +1,51 @@
 ---
 created: 2026-06-30
-status: pending
-tags: [android, compose, room, sync]
+status: complete
+tags: [android, compose, screens, final]
 ---
 
-# Android — Phase 6 Implementation
+# Android — Phase 6 Complete
 
-## Current Codebase
-- 106 Kotlin files, 8,210 LOC
-- Jetpack Compose UI + Room DB + WorkManager + Hilt DI
-- Existing screens: Login, Dashboard, Transaction, Project, Settings
+## Final Screens (12)
 
-## Screens to Build (8 new)
+| # | Screen | Role | Path |
+|---|--------|------|------|
+| 1 | Login | All | `auth/LoginScreen.kt` |
+| 2 | Password Change | All | `auth/PasswordChangeScreen.kt` |
+| 3 | Dashboard Summary | All | `dashboard/SummaryScreen.kt` |
+| 4 | My Tasks | FE | `budget/MyTasksScreen.kt` |
+| 5 | Budget Estimate Form | FE | `budget/BudgetEstimateFormScreen.kt` |
+| 6 | Realization Form | FE | `budget/RealizationFormScreen.kt` |
+| 7 | Laporan Pekerjaan | FE | `budget/LaporanPekerjaanScreen.kt` |
+| 8 | Supervisor Inbox | SUP | `budget/SupervisorInboxScreen.kt` |
+| 9 | Assign Task | SUP | `budget/AssignTaskScreen.kt` |
+| 10 | Approval | OWNER | `budget/ApprovalScreen.kt` |
+| 11 | Verification | ADMIN/FM | `budget/VerificationScreen.kt` |
+| 12 | Crash Log Viewer | All | `settings/CrashLogScreen.kt` |
+| 13 | Sync Monitor | ADMIN | `settings/SyncMonitorScreen.kt` |
 
-| # | Screen | Role | ViewModel | Backend Endpoint |
-|---|--------|------|-----------|-----------------|
-| 1 | MyTasksScreen | FE | MyTasksViewModel | GET /task-expenses |
-| 2 | BudgetEstimateFormScreen | FE | BudgetEstimateViewModel | POST /task-expenses |
-| 3 | RealizationFormScreen | FE | RealizationViewModel | POST .../realize |
-| 4 | SupervisorInboxScreen | SUP | SupervisorInboxViewModel | List + forward/reject |
-| 5 | AssignTaskScreen | SUP | AssignTaskViewModel | POST /task-expenses |
-| 6 | ApprovalScreen | OWNER | ApprovalViewModel | POST .../approve |
-| 7 | VerificationScreen | ADMIN/FM | VerificationViewModel | POST .../verify |
-| 8 | LaporanPekerjaanScreen | FE | LaporanViewModel | (API belum dibuat) |
+## Data Layer
 
-## New Data Layer
-- Room Entities: TaskExpenseEntity, ExpenseItemEntity, BudgetTemplateEntity, MasterLocationEntity, LaporanPekerjaanEntity, PerangkatEntity
-- DAOs: TaskExpenseDao, BudgetTemplateDao, MasterLocationDao, LaporanDao
-- Repositories: BudgetRepository, LaporanRepository
-- Sync Extension: Expand SyncWorker for task_expense entities
-- File Upload Worker: BuktiUploadWorker (separate from sync)
+| Component | Purpose |
+|-----------|---------|
+| TaskExpenseEntity + DAO | Budget requests (Room SSOT) |
+| ExpenseItemEntity + DAO | Per-item budget lines |
+| BudgetTemplateEntity + DAO | Cached budget templates |
+| MasterLocationEntity + DAO | Cached locations |
+| BudgetRepository | Domain operations + outbox |
+| BudgetMappers | Entity ↔ Domain conversion |
 
-## Navigation Update
-Bottom nav (`FundsManagerNavHost`):
-- FE: Tasks | Transaksi | Projects | Sync | Settings
-- SUP: Inbox | Transaksi | Locations | Projects | Settings
-- OWNER: Approval | Transaksi | Projects | Settings
-- ADMIN/FM: Verification | Transactions | Locations | Projects | Settings
+## Architecture Compliance
 
-## Required Skills
-- [[Architecture Best Practices]] — Official Google Android architecture guide
-- `android-apk-build` — Build & distribute APK
-- `android-debugging` — Runtime debugging checklist
-- `simplify-code` — 3-agent parallel cleanup
-- `test-driven-development` — RED-GREEN-REFACTOR per screen
+- ✅ SSOT (Room DB)
+- ✅ UDF (StateFlow down, events up)
+- ✅ ViewModel + StateFlow + collectAsStateWithLifecycle()
+- ✅ Repository pattern
+- ✅ Single Activity + Compose Navigation
+- ✅ Hilt DI
+- ✅ Immutable UiState
+- ✅ CrashReporter (uncaught exception handler)
+
+## References
+- [[Architecture Best Practices]] — Official Android guide
+- [[Compose UI Pattern]] — ViewModel + UiState + Screen pattern
