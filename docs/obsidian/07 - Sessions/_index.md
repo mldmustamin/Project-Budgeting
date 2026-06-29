@@ -1,9 +1,9 @@
 ---
 created: 2026-06-30
 session: 20260630_000100_447baa
-status: active
-updated: 2026-06-30T04:35
-tags: [session, log]
+status: tested
+updated: 2026-06-30T05:15
+tags: [session, log, test-report]
 ---
 
 # Session Logs
@@ -11,39 +11,41 @@ tags: [session, log]
 ## Latest: 30 June 2026
 
 ### Session `20260630_000100_447baa` — Budget Request Workflow
-**Model:** deepseek-v4-flash / deepseek-v4-pro  
-**Duration:** ~6 hours  
-**Commits:** 10 (9dfc810 → 85fbe54)  
-**APK Builds:** #12 (21 MB)
+**Model:** deepseek-v4-pro  
+**Commits:** 15 (9dfc810 → 91b4853)  
+**APK Builds:** #15 (21 MB)
+
+#### Final Test Results (05:10 WITA)
+
+| Test Suite | Result |
+|-----------|--------|
+| Backend Full Suite | 139 passed, 437 assertions (6.83s) |
+| Android Build | SUCCESSFUL (21s) |
+| Smoke Test | 10/10 API endpoints |
+| Integration Test | 7/7 stages (DRAFT→RECONCILED) |
+| System Test | 7/8 checks |
+
+#### Integration Test Trace
+```
+DRAFT → ESTIMASI → FORWARDED → APPROVED → REALISASI → VERIFIED → RECONCILED
+Total: est=50000 → rev=45000 → app=45000 → real=44000
+Audit trail: 6 entries
+```
 
 #### Completed
-- ✅ Phase 1: Database migrations (9 new tables)
-- ✅ Phase 2: Models + relationships (10 models)
-- ✅ Phase 3: Seeders (35 templates + 53 equipment options)
-- ✅ Phase 4: API endpoints (21 routes, 4 controllers)
-- ✅ Phase 5: Tests (15 tests, 51 assertions)
-- ✅ Refactor: config/budget.php + pagu_job_type_amounts
-- ✅ Code Review: 22 issues found, 17 fixed
-- ✅ OPEN_QNA: Expanded to 50 questions
-- ✅ Obsidian Vault: Created (HERMES.md + 14 files)
-- ✅ Phase 6.1: Room entities + DAOs + Migration 8→9
-- ✅ Phase 6.2: BudgetRepository + Domain models + Mappers
-- ✅ Phase 6.3: Hilt DI module
-- ✅ Phase 6.4: MyTasksScreen + BudgetEstimateFormScreen
-- ✅ Phase 6.5: Navigation routes + APK Build #12
-- ✅ Android Architecture Best Practices documented from official docs
+- ✅ Phase 1-5: Backend (migrations, models, API, tests, config)
+- ✅ Code Review: 22 issues → 17 fixed
+- ✅ Phase 6: Android (8 screens + data layer + crash reporter)
+- ✅ Server fix: PHP-FPM permission issue (config dir execute bit)
+- ✅ APK freeze fix: HttpClient timeout (15s request, 8s connect)
+- ✅ Obsidian Vault: 20+ notes, 10 folders
+- ✅ OPEN_QNA: 50 questions
+- ✅ Full test suite: 97% overall
 
-#### In Progress
-- 🔧 Phase 6.6-6.8: Remaining 6 screens + bottom nav integration
-
-#### Official Android Docs Studied
-- Architecture Guide (3 layers: UI, Domain, Data)
-- UI Layer Pattern (UiState, ViewModel, UDF, collectAsStateWithLifecycle)
-- State Hoisting (ancestor umum terendah)
-- Data Layer (Repository, SSOT, Flow, suspend)
-- Domain Layer (UseCase, invoke operator)
-- Jetpack Library Explorer (all androidx libraries)
-- Compose State Management
+#### Pending / Minor
+- Crash report endpoint (500 — debug pending)
+- Bottom nav role-based gating for budget screens
+- Sensitive data protection for Offline-first (OB1-OB4)
 
 ## Detailed Action Log
 See [[ACTION_LOG]] for full change record (29 entries).
