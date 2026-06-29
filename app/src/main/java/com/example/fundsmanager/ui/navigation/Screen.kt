@@ -24,6 +24,8 @@ sealed class Screen(val route: String) {
     object MyTasks : Screen("my_tasks")
     object BudgetEstimateForm : Screen("budget_estimate_form")
     object SupervisorInbox : Screen("supervisor_inbox")
+    object AssignTask : Screen("assign_task")
     object Approval : Screen("approval")
     object Verification : Screen("verification")
+    object LaporanPekerjaan : Screen("laporan_pekerjaan")
 }

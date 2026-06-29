@@ -31,6 +31,12 @@ import com.example.fundsmanager.ui.screen.transaction.TransactionListScreen
 import com.example.fundsmanager.ui.screen.transaction.TransactionFormScreen
 import com.example.fundsmanager.ui.screen.budget.MyTasksScreen
 import com.example.fundsmanager.ui.screen.budget.BudgetEstimateFormScreen
+import com.example.fundsmanager.ui.screen.budget.ApprovalScreen
+import com.example.fundsmanager.ui.screen.budget.VerificationScreen
+import com.example.fundsmanager.ui.screen.budget.SupervisorInboxScreen
+import com.example.fundsmanager.ui.screen.budget.AssignTaskScreen
+import com.example.fundsmanager.ui.screen.budget.RealizationFormScreen
+import com.example.fundsmanager.ui.screen.budget.LaporanPekerjaanScreen
 import com.example.fundsmanager.util.logging.AppLogCategory
 import com.example.fundsmanager.util.logging.AppLogger
 import kotlinx.coroutines.launch
@@ -375,6 +381,45 @@ fun FundsManagerNavHost(
 
         composable(Screen.BudgetEstimateForm.route) {
             BudgetEstimateFormScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable("realization/{taskUuid}") {
+            RealizationFormScreen(
+                taskUuid = it.arguments?.getString("taskUuid") ?: "",
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.LaporanPekerjaan.route) {
+            LaporanPekerjaanScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.SupervisorInbox.route) {
+            SupervisorInboxScreen(
+                onTaskClick = { uuid ->
+                    // TODO: navigate to task detail
+                }
+            )
+        }
+
+        composable(Screen.AssignTask.route) {
+            AssignTaskScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Approval.route) {
+            ApprovalScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Screen.Verification.route) {
+            VerificationScreen(
                 onBack = { navController.popBackStack() }
             )
         }
