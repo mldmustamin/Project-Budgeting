@@ -1,0 +1,114 @@
+# ponytail: manual post index for search/pagination
+# YAML block syntax for tags to avoid flow-style nesting issues
+
+- slug: dashboard
+  title: Technical Dashboard
+  desc: "Project overview: 7-stage workflow, 6 roles, stack, metrics, hard constraints."
+  tags:
+    - dashboard
+    - metrics
+    - overview
+
+- slug: product
+  title: Product Requirements
+  desc: "Problem statement, 6 user personas, 7 core capabilities including offline-first and RBAC."
+  tags:
+    - product
+    - prd
+    - personas
+
+- slug: architecture
+  title: System Architecture
+  desc: "Client-server design with data flow diagrams, security model, infrastructure at 103.94.11.78."
+  tags:
+    - architecture
+    - system-design
+    - infrastructure
+
+- slug: backend
+  title: Backend — Laravel 11 API
+  desc: "22 API endpoints, 700-line TaskExpenseController, authorization matrix, pagu enforcement logic."
+  tags:
+    - backend
+    - api
+    - laravel
+
+- slug: android
+  title: Android — Kotlin/Compose
+  desc: "13 Compose screens, Room DB entities, sync engine with outbox pattern, multi-user per device."
+  tags:
+    - android
+    - compose
+    - room
+
+- slug: database
+  title: Database Schema — PostgreSQL 14
+  desc: "31 tables with full relationships diagram, 4-layer nominal tracking, additive migrations."
+  tags:
+    - database
+    - schema
+    - postgresql
+
+- slug: workflows
+  title: Budget Request Workflow
+  desc: "Complete 7-stage lifecycle with rejection flow, offline path, pagu enforcement detail, audit trail."
+  tags:
+    - workflow
+    - budget
+    - approval
+
+- slug: sessions
+  title: Session Logs
+  desc: "Development history: major build session (21 commits), post-gap fixes (12 commits), blog creation."
+  tags:
+    - sessions
+    - history
+    - development
+
+- slug: open-qna
+  title: Open Q&A — 50 Questions
+  desc: "Technical FAQ covering product, architecture, finance, roles, web, budget, authorization, database."
+  tags:
+    - faq
+    - qna
+    - knowledge-base
+
+- slug: resources
+  title: Resources
+  desc: "Hermes 18 skill categories, Android & Laravel dependencies, config files, external references."
+  tags:
+    - resources
+    - skills
+    - dependencies
+
+- slug: hermes
+  title: HERMES.md — AI Context
+  desc: "AI agent context injection: stack, vault structure, hard constraints, workflow conventions."
+  tags:
+    - hermes
+    - ai
+    - context
+
+- slug: soul
+  title: SOUL.md — Identity
+  desc: "Hermes operating system: 9 sections covering strategic thinking, godly coding, anti-hallucination."
+  tags:
+    - soul
+    - identity
+    - rules
+
+- slug: android-architecture-best-practices
+  title: Android Architecture Best Practices
+  desc: "Official Google guidance on offline-first architecture, UDF, testing strategy, dependency injection."
+  tags:
+    - android
+    - architecture
+    - best-practice
+
+- slug: android-compose-ui-pattern
+  title: Compose UI Pattern
+  desc: "ViewModel + UiState + Screen pattern with real FundManager code examples and navigation."
+  tags:
+    - android
+    - compose
+    - pattern
