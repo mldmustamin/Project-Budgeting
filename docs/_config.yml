@@ -6,3 +6,10 @@ collections:
   blog:
     output: true
     permalink: /blog/:name
+
+defaults:
+  - scope:
+      path: ""
+      type: blog
+    values:
+      layout: default
