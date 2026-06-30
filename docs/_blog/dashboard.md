@@ -16,14 +16,30 @@ server: "103.94.11.78"
 demo: https://mldmustamin.github.io/Project-Budgeting/
 ---
 
+<a href="/Project-Budgeting/" class="back-link">← Back to index</a>
+
 # 🏗️ FundManager V2 — Technical Dashboard
 
-> [!SUMMARY]
-> **Budget management platform for field engineering teams.** Single APK (Kotlin/Compose) + Laravel 11 API + PostgreSQL. 6 roles, 3 pagu channels, 7-stage budget workflow. Local-first Android ↔ server-authoritative backend. Production @ VPS `103.94.11.78`.
+<div class="toc">
+<strong>Contents</strong>
+<a href="#-stack">🧱 Stack</a>
+<a href="#-budget-workflow--7-stages">🔄 Budget Workflow</a>
+<a href="#-6-roles--rbac-matrix">👥 RBAC Matrix</a>
+<a href="#-live-metrics">📊 Live Metrics</a>
+<a href="#-web-pages">🌐 Web Pages</a>
+<a href="#-android-screens">📱 Android Screens</a>
+<a href="#-recent-patches">🔧 Recent Patches</a>
+</div>
+
+<div class="callout summary">
+**Budget management platform for field engineering teams.** Single APK (Kotlin/Compose) + Laravel 11 API + PostgreSQL. 6 roles, 3 pagu channels, 7-stage budget workflow. Local-first Android ↔ server-authoritative backend. Production @ VPS <code>103.94.11.78</code>.
+</div>
 
 ---
 
 ## 🧱 Stack
+
+<div class="card">
 
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
@@ -34,9 +50,13 @@ demo: https://mldmustamin.github.io/Project-Budgeting/
 | **Sync** | Outbox pattern + idempotency key: `{serverUserId}:{deviceId}:{operationId}` | Multi-device, multi-user, offline-first |
 | **Cash** | `BigInt` (Long) everywhere — never `Double`/`Float` | Finance ledger integrity |
 
+</div>
+
 ---
 
 ## 🔄 Budget Workflow — 7 Stages
+
+<div class="card">
 
 ```
 FE Draft (max 5)  →  ESTIMASI  →  SUP Forward  →  FORWARDED
@@ -50,24 +70,34 @@ VERIFIED (ADMIN + FM reconcile)  →  RECONCILED
 - **3 pagu channels:** FIXED_PAGU (auto), TICKET (verified), MANAGER_APPROVAL (OWNER-set)
 - **config/budget.php** — all hardcoded params single source: `BUDGET_MAX_DRAFTS=5`, `BUDGET_PAGINATION=20`, voucher/buruh/ballast/fee amounts
 
+</div>
+
 ---
 
 ## 👥 6 Roles — RBAC Matrix
 
+<div class="card">
+
 | Role | App | Budget | Approval | Realization | Reports |
 |------|-----|--------|----------|-------------|---------|
-| **OWNER** | Full | Full | **Only approver** | Full | Full |
-| **ADMIN** | Full | Full | Verify only | Verify | Full |
-| **FINANCE_MANAGER** | Full | Full | Reconcile only | Reconcile | Full |
-| **SUPERVISOR** | Team | Submit + Forward | — | View team | Project |
-| **FIELD_ENGINEER** | Assigned | Estimate + Realize | — | Submit | Self |
-| **AUDITOR** | Read | Read | — | — | Read |
+| <span class="role-badge role-owner">OWNER</span> | Full | Full | **Only approver** | Full | Full |
+| <span class="role-badge role-admin">ADMIN</span> | Full | Full | Verify only | Verify | Full |
+| <span class="role-badge role-fm">FM</span> | Full | Full | Reconcile only | Reconcile | Full |
+| <span class="role-badge role-sup">SUPERVISOR</span> | Team | Submit + Forward | — | View team | Project |
+| <span class="role-badge role-fe">FIELD ENG</span> | Assigned | Estimate + Realize | — | Submit | Self |
+| <span class="role-badge role-auditor">AUDITOR</span> | Read | Read | — | — | Read |
 
-> [!IMPORTANT] OWNER satu-satunya role yang bisa approve budget request + set nominal. ADMIN dan FM hanya mencocokkan data realisasi.
+</div>
+
+<div class="callout important">
+OWNER satu-satunya role yang bisa approve budget request + set nominal. ADMIN dan FM hanya mencocokkan data realisasi.
+</div>
 
 ---
 
 ## 📊 Live Metrics
+
+<div class="card">
 
 | Metric | |
 |--------|---|
@@ -79,9 +109,13 @@ VERIFIED (ADMIN + FM reconcile)  →  RECONCILED
 | `tests` | 139 passing, 437 assertions |
 | `apk` | v2.0.0-b20 — 21 MB |
 
+</div>
+
 ---
 
 ## 🌐 Web Pages
+
+<div class="card">
 
 | Route | Roles | |
 |-------|-------|---|
@@ -99,9 +133,13 @@ VERIFIED (ADMIN + FM reconcile)  →  RECONCILED
 | `/laporan` | FE | Laporan pekerjaan form |
 | `/mytasks` | FE | Task assignments from supervisor |
 
+</div>
+
 ---
 
 ## 📱 Android Screens
+
+<div class="card">
 
 | Screen | Composable | Roles |
 |--------|-----------|-------|
@@ -118,9 +156,13 @@ VERIFIED (ADMIN + FM reconcile)  →  RECONCILED
 | Crash Logs | `CrashLogScreen` | All |
 | Sync Monitor | `SyncMonitorScreen` | ADMIN |
 
+</div>
+
 ---
 
 ## 🔧 Recent Patches
+
+<div class="card">
 
 | # | Issue | Root Cause | Fix | Platform |
 |---|-------|-----------|-----|----------|
@@ -133,27 +175,29 @@ VERIFIED (ADMIN + FM reconcile)  →  RECONCILED
 | 36 | Hotel calc broken | Static tarif | `jumlah_hari × tarif_per_hari` auto | Web |
 | 37 | Alpine x-data quotes | Nested quotes in attribute | Move to `<script>` tag | Web |
 
----
+</div>
 
-> [!DANGER] **Hard Constraints**
-> - Money = `Long`/`BigInt`. Never `Double`/`Float`.
-> - Approved transactions are **immutable** — correction/void creates new row.
-> - Sync outbox scoped per user, device, session. Retry = no duplicate.
-> - Local `Long id` primary key preserved. `uuid`, `serverId`, `syncStatus` additive only.
+<div class="callout danger">
+<strong>Hard Constraints</strong><br>
+• Money = <code>Long</code>/<code>BigInt</code>. Never <code>Double</code>/<code>Float</code>.<br>
+• Approved transactions are <strong>immutable</strong> — correction/void creates new row.<br>
+• Sync outbox scoped per user, device, session. Retry = no duplicate.<br>
+• Local <code>Long id</code> primary key preserved. <code>uuid</code>, <code>serverId</code>, <code>syncStatus</code> additive only.
+</div>
 
 ---
 
 ## 🔗 Graph
 
-- [[product]] — PRD, personas, scope
-- [[architecture]] — system design, stack, key decisions
-- [[backend]] — API routes, controllers, migrations
-- [[android]] — Compose screens, Room DB, sync engine
-- [[database]] — schema, 31 tables, FK chain
-- [[workflows]] — 7-stage budget flow, sync pattern
-- [[sessions]] — session logs, ACTION_LOG
-- [[open-qna]] — 50 stakeholder questions
-- [[soul]] — Hermes identity & operating system
+- [Product](blog/product) — PRD, personas, scope
+- [Architecture](blog/architecture) — system design, stack, key decisions
+- [Backend](blog/backend) — API routes, controllers, migrations
+- [Android](blog/android) — Compose screens, Room DB, sync engine
+- [Database](blog/database) — schema, 31 tables, FK chain
+- [Workflows](blog/workflows) — 7-stage budget flow, sync pattern
+- [Sessions](blog/sessions) — session logs, ACTION_LOG
+- [Open Q&A](blog/open-qna) — 50 stakeholder questions
+- [SOUL](blog/soul) — Hermes identity & operating system
 - [GitHub](https://github.com/mldmustamin/Project-Budgeting)
 - [Live Site](https://mldmustamin.github.io/Project-Budgeting/)
 
