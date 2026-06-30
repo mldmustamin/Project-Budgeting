@@ -1,5 +1,6 @@
 title: FundManager V2 — Engineering Blog
 description: Budget management for field engineering — Kotlin/Compose + Laravel 11
+theme: minima
 
 collections:
   blog:
