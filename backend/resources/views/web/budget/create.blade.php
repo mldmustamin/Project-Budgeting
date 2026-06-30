@@ -11,12 +11,12 @@
         pendingTemplateId: null,
         jobType: 'INSTALASI',
 
-        allTemplates: {{ Js::from($templates->map(fn($t) => [
+        allTemplates: {!! json_encode($templates->map(fn($t) => [
             'id' => $t->id,
             'name' => $t->category_name,
-            'pagu_type' => $t->pagu_type,
+            'pagu_type' => $t->pagu_type ?? 'FIXED_PAGU',
             'pagu_amount' => $t->pagu_amount,
-        ])) }},
+        ])) !!},
 
         filteredTemplatesBySearch(q) {
             q = (q || '').toLowerCase();
@@ -91,7 +91,7 @@
                 },
                 get isHotel() {
                     let t = this.selectedTemplate;
-                    return t && (t.pagu_type === 'HOTEL' || t.name.toLowerCase().includes('hotel'));
+                    return t && (t.name.toLowerCase().includes('hotel') || t.name.toLowerCase().includes('akomodasi'));
                 },
                 get ratePerUnit() {
                     let t = this.selectedTemplate;
