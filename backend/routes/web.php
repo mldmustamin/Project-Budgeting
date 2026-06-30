@@ -38,6 +38,7 @@ Route::middleware('auth')->group(function () {
 // Authenticated routes
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthWebController::class, 'logout'])->name('logout');
+    Route::get('/logout', [AuthWebController::class, 'logout']);
 
     // Search (all authenticated)
     Route::get('/search', [SearchController::class, 'search'])->name('web.search');
