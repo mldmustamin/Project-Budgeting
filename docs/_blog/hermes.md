@@ -1,3 +1,8 @@
+---
+title: HERMES.md
+layout: default
+---
+
 # HERMES.md — FundManager V2 Context
 
 ## Who I Am
