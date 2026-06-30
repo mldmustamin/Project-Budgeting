@@ -22,6 +22,7 @@ Budget management platform for field engineering teams. Android (Kotlin/Compose)
 - [Android — Architecture Best Practices](/blog/android-architecture-best-practices)
 - [Android — Compose UI Pattern](/blog/android-compose-ui-pattern)
 - [HERMES.md — AI Agent Context](/blog/hermes)
+- [SOUL.md — Hermes Identity & Operating System](/blog/soul)
 
 ## Quick Links
 
