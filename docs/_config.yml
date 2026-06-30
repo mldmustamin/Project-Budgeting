@@ -1,4 +1,7 @@
 title: FundManager V2 — Engineering Blog
 description: Budget management for field engineering — Kotlin/Compose + Laravel 11
-show_downloads: false
-theme: jekyll-theme-minimal
+
+collections:
+  blog:
+    output: true
+    permalink: /blog/:name
