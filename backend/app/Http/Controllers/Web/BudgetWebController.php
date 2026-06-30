@@ -302,6 +302,17 @@ class BudgetWebController extends Controller
             return back()->with('error', 'Maksimal 5 draft per user. Harap submit atau hapus draft yang ada.');
         }
 
+        // Strip commas from money inputs
+        if ($request->has('items')) {
+            $items = $request->input('items');
+            foreach ($items as $i => $item) {
+                if (isset($item['estimated_amount'])) {
+                    $items[$i]['estimated_amount'] = str_replace(['Rp', '.', ',', ' '], '', $item['estimated_amount']);
+                }
+            }
+            $request->merge(['items' => $items]);
+        }
+
         $validated = $request->validate([
             'task_no'                    => ['required', 'string', 'max:50'],
             'vid'                        => ['required', 'string', 'max:50'],

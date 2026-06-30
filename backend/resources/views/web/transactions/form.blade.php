@@ -64,16 +64,10 @@
                 @error('date') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
             </div>
 
-            <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Nominal (Rp) *</label>
-                <input type="number" name="reported_amount" value="{{ old('reported_amount', $transaction?->reported_amount) }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 @error('reported_amount') border-red-400 @enderror" placeholder="0">
-                @error('reported_amount') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-            </div>
+            <x-money-input name="reported_amount" label="Nominal (Rp) *" value="{{ old('reported_amount', $transaction?->reported_amount) }}" />
 
             <div>
-                <label class="block text-xs font-semibold text-gray-500 mb-1">Real Amount (Rp)</label>
-                <input type="number" name="real_amount" value="{{ old('real_amount', $transaction?->real_amount) }}" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500" placeholder="0">
-            </div>
+                <x-money-input name="real_amount" label="Real Amount (Rp)" value="{{ old('real_amount', $transaction?->real_amount) }}" />
         </div>
 
         <div>
