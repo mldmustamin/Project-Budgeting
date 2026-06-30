@@ -572,6 +572,18 @@ class BudgetWebController extends Controller
         return back()->with('success', "Task {$task->task_no} telah direkonsiliasi.");
     }
 
+    // === FIELD ENGINEER — My Tasks ===
+
+    public function myTasks(Request $request): View
+    {
+        $tasks = TaskExpense::where('submitted_by', auth()->id())
+            ->with(['location:id,remote_name', 'items'])
+            ->orderByDesc('created_at')
+            ->get();
+
+        return view('web.budget.my-tasks', compact('tasks'));
+    }
+
     // === FIELD ENGINEER — Laporan Pekerjaan ===
 
     public function laporanForm(): View

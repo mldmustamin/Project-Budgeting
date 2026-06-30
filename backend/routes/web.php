@@ -128,6 +128,7 @@ Route::middleware('auth')->group(function () {
 
     // Budget CRUD (FIELD_ENGINEER)
     Route::middleware('role:FIELD_ENGINEER')->group(function () {
+        Route::get('/my-tasks', [App\Http\Controllers\Web\BudgetWebController::class, 'myTasks'])->name('web.budget.my-tasks');
         Route::get('/budget', [App\Http\Controllers\Web\BudgetWebController::class, 'index'])->name('web.budget.index');
         Route::get('/budget/create', [App\Http\Controllers\Web\BudgetWebController::class, 'create'])->name('web.budget.create');
         Route::post('/budget', [App\Http\Controllers\Web\BudgetWebController::class, 'store'])->name('web.budget.store');
