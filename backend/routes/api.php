@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AttachmentController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BudgetItemTemplateController;
+use App\Http\Controllers\Api\ClickLogController;
 use App\Http\Controllers\Api\CrashReportController;
 use App\Http\Controllers\Api\DeviceController;
 use App\Http\Controllers\Api\MasterEquipmentOptionController;
@@ -87,6 +88,10 @@ Route::prefix('v1/sync')->middleware('auth:sanctum')->group(function () {
     Route::get('/changes', [SyncChangesController::class, 'changes']);
     Route::get('/status', [SyncStatusController::class, 'status']);
 });
+
+// Click log debugger (rate-limited)
+Route::post('/v1/logs', [ClickLogController::class, 'store'])
+    ->middleware(['auth:sanctum', 'throttle:60,1']);
 
 // Health check (public)
 Route::get('/health', fn () => response()->json(['status' => 'ok']));

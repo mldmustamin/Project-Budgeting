@@ -147,8 +147,10 @@ Route::middleware('auth')->group(function () {
         Route::delete('/equipment/{option}', [App\Http\Controllers\Web\EquipmentWebController::class, 'destroy'])->name('web.equipment.destroy');
     });
 
-    // Sync Monitor (ADMIN, OWNER)
+    // Sync Monitor + Admin tools (ADMIN, OWNER)
     Route::middleware('role:OWNER|ADMIN')->group(function () {
         Route::get('/sync', [SyncMonitorController::class, 'index'])->name('web.sync.monitor');
+        Route::get('/admin/click-logs', [\App\Http\Controllers\Api\ClickLogController::class, 'index'])
+            ->name('admin.click-logs');
     });
 });
