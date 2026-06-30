@@ -21,7 +21,7 @@ import com.example.fundsmanager.data.local.entity.*
         BudgetTemplateEntity::class,
         MasterLocationEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = true
 )
 @TypeConverters(Converters::class)
