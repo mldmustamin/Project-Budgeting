@@ -445,3 +445,65 @@ All 6 gaps closed via 3 subagents. Project now 100% parity Web ↔ Android.
 - 12 web pages, 12 Android screens
 - APK Build #16 (21 MB)
 - All permissions documented: chmod 755 dirs, 644 PHP files, 775 cache/storage
+
+---
+
+## 32. Android — Login Freeze Fix (3 Root Causes)
+
+| # | Symptom | Root Cause | Fix |
+|---|---------|-----------|-----|
+| 1 | Login freeze after entering password | Device registration HTTP call blocking UI thread | Move to background coroutine |
+| 2 | Login retry loop | SyncManager auto-start before auth token exists | Guard sync start behind authenticated session |
+| 3 | Stuck on splash | CrashReporter init before login | Defer CrashReporter init until authenticated |
+
+**Verification:** APK deployed via wireless ADB, login/sync/device-reg all working.
+
+## 33. Build — APK Version Auto-Increment
+
+Script `scripts/bump-version.sh` auto-increments `versionCode` and `versionName` before every build. APK v2.0.0-b20 built + deployed (21 MB).
+
+## 34. Android — Room DB Migration v10 + Dashboard Freeze Fix
+
+|| Issue | Fix |
+||-------|-----|
+|| Dashboard freeze after v10 migration | Column names in SQL must match Entity property names (camelCase) |
+|| DB version not bumping | Version must increment — same version won't re-trigger migration |
+|| Migration fails silently | Added error logging in MigrationCallback |
+
+## 35. Web — MyTasks + 50 Users Ready
+
+`/mytasks` page for field engineers — task assignments from supervisor. Web dashboard re-tested under 50 concurrent user simulation:
+- All 12 pages functional under load
+- Session handling, permissions, role gates all hold
+
+## 36. Web — Fixes (4 items)
+
+| Issue | Fix |
+|-------|-----|
+| Logout returns 405 | Added GET route `/logout` alongside POST |
+| Category dropdown not searchable | Added Select2 to category selector |
+| IDR input `40000` not formatted | JS formatter converts to `40,000` on blur |
+| Hotel calculation static | Auto-calc: `jumlah_hari × tarif_per_hari` |
+
+## 37. Web — Blade Fixes
+
+| Issue | Fix |
+|-------|-----|
+| Alpine.js `x-data` with quotes inside quotes | Moved to `<script>` tag with JSON encoding |
+| Blade `@can/@role` directives broken | `@can('permission')` → `@role('name')` fixed |
+| Password reset Blade syntax error | `{{ $errors->first('email') }}` → `$errors->first('email')` fix |
+
+## Update — Final Push
+
+32 commits pushed to GitHub (062a7dc). Remote sync confirmed.
+
+---
+
+## Updated Project Stats
+
+- 32 commits (9dfc810 → 062a7dc)
+- 139 tests, 437 assertions
+- 31 DB tables, 22 API routes, 30+ web routes
+- 13 web pages, 12 Android screens
+- APK Build #20 (v2.0.0-b20, 21 MB)
+- Obsidian vault: 24 files, 11 folders

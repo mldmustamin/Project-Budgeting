@@ -2,7 +2,7 @@
 created: 2026-06-30
 status: complete
 priority: high
-updated: 2026-06-30T05:58
+updated: 2026-07-01T01:00
 ---
 
 # Dashboard — FundManager V2
@@ -17,13 +17,13 @@ updated: 2026-06-30T05:58
 
 | Metric | Value |
 |--------|-------|
-| **Commits** | 21 (9dfc810 → 055c58f) |
-| **APK Build** | #16 (21 MB) |
+| **Commits** | 32 (9dfc810 → 062a7dc) |
+| **APK Build** | #20 / v2.0.0-b20 (21 MB) |
 | **Backend Tests** | 139 passed, 437 assertions |
 | **Database Tables** | 31 |
 | **API Routes** | 22 |
 | **Web Routes** | 30+ |
-| **Web Pages** | 12 |
+| **Web Pages** | 13 |
 | **Android Screens** | 12 |
 | **Kotlin Files** | 18 new |
 | **Obsidian Notes** | 24 files |
@@ -53,6 +53,7 @@ Docs     ███████████████████████�
 | `/locations` | SUP/ADMIN | Master locations CRUD |
 | `/equipment` | SUP/ADMIN | Equipment options CRUD |
 | `/laporan` | FE | Laporan pekerjaan form |
+| `/mytasks` | FE | Task assignments from supervisor |
 
 ### Android Screens
 
@@ -72,8 +73,23 @@ Docs     ███████████████████████�
 | Sync Monitor | ADMIN |
 
 ### Known Issues
-- None. All 6 gaps closed.
+- Login freeze (device registration blocking UI) — fixed: background coroutine
+- Room DB migration v10 column name mismatch — fixed: camelCase Entity names
+- Web logout 405 — fixed: GET route added
 - Bootstrap/cache permissions reset on `php artisan optimize`
+
+### Recent Fixes (Session #32-#37)
+| Fix | Platform |
+|-----|----------|
+| Login freeze (3 root causes) | Android |
+| Room DB migration v10 | Android |
+| APK Build #20 | Android |
+| MyTasks page | Web |
+| Logout GET route | Web |
+| IDR money formatting | Web |
+| Hotel auto-calc | Web |
+| Alpine.js x-data escaping | Web |
+| Blade @role directive | Web |
 
 ### Quick Links
 - [[HERMES]]
