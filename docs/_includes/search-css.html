@@ -1,0 +1,55 @@
+<style>
+#search-box {
+  width: 100%;
+  padding: 0.75em 1em;
+  border: 1px solid #30363d;
+  border-radius: 6px;
+  background: #0d1117;
+  color: #c9d1d9;
+  font-size: 1em;
+  margin: 0 0 0.5em;
+  outline: none;
+}
+#search-box:focus { border-color: #58a6ff; }
+#result-count { color: #8b949e; font-size: 0.85em; margin-bottom: 1em; }
+.post-card {
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 1em 1.25em;
+  margin-bottom: 0.75em;
+  background: #161b22;
+  transition: border-color 0.15s;
+}
+.post-card:hover { border-color: #58a6ff; }
+.post-card h3 { margin: 0 0 0.3em; border: none; font-size: 1.1em; }
+.post-card h3 a { color: #58a6ff; }
+.post-card .meta { color: #8b949e; font-size: 0.8em; }
+.post-card .desc { color: #c9d1d9; font-size: 0.9em; margin-top: 0.3em; }
+.post-tag {
+  display: inline-block;
+  background: rgba(88,166,255,0.15);
+  color: #58a6ff;
+  padding: 0.1em 0.5em;
+  border-radius: 12px;
+  font-size: 0.75em;
+  margin-right: 0.3em;
+}
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 0.5em;
+  margin-top: 2em;
+  flex-wrap: wrap;
+}
+.pagination button {
+  padding: 0.4em 0.8em;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  background: #161b22;
+  color: #c9d1d9;
+  cursor: pointer;
+  font-size: 0.85em;
+}
+.pagination button.active { background: #58a6ff; color: #000; border-color: #58a6ff; }
+.pagination button:disabled { opacity: 0.4; cursor: default; }
+</style>
