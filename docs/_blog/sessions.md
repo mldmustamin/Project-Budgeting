@@ -1,4 +1,5 @@
 ---
+layout: default
 created: 2026-06-30
 updated: 2026-07-01
 session: 20260630_000100_447baa

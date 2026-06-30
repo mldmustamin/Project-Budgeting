@@ -1,4 +1,5 @@
 ---
+layout: default
 created: 2026-06-30
 status: active
 tags: [product, prd, requirements, personas]

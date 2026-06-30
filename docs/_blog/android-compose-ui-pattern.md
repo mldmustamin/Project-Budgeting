@@ -1,4 +1,5 @@
 ---
+layout: default
 created: 2026-06-30
 source: developer.android.com
 tags: [android, compose, pattern, viewmodel, uistate, udf]

@@ -1,4 +1,5 @@
 ---
+layout: default
 created: 2026-06-30
 updated: 2026-07-01T02:00
 status: production
