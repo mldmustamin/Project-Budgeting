@@ -20,6 +20,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -71,21 +72,45 @@ class LoginViewModel @Inject constructor(
                 .onSuccess { response ->
                     appLogger.info(AppLogCategory.AUTH, "Login", "login_success",
                         "Login successful", "userId=${response.user.id}")
-                    saveSessionAndRegisterDevice(response)
+                    
+                    try {
+                        sessionManager.saveSession(
+                            userId = response.user.id,
+                            userName = response.user.name,
+                            userEmail = response.user.email,
+                            userUuid = response.user.uuid,
+                            roles = response.user.roles,
+                            accessToken = response.accessToken,
+                            deviceUuid = UUID.randomUUID().toString()
+                        )
+                        userDao.insertUser(UserEntity(
+                            id = response.user.id,
+                            name = response.user.name,
+                            email = response.user.email,
+                            uuid = response.user.uuid,
+                        ))
+                    } catch (e: Exception) {
+                        appLogger.warning(AppLogCategory.AUTH, "Login", "session_save_failed", e.message ?: "")
+                    }
+
                     val needsPasswordChange = response.user.passwordChangeRequired
                     _uiState.update { it.copy(
                         isLoading = false,
                         isLoggedIn = !needsPasswordChange,
                         requirePasswordChange = needsPasswordChange,
                     ) }
+
+                    registerDeviceInBackground(response)
                 }
                 .onFailure { error ->
-                    appLogger.warning(AppLogCategory.AUTH, "Login", "login_failed",
-                        error.message ?: "Unknown error")
-                    _uiState.update { it.copy(
-                        isLoading = false,
-                        error = error.message ?: "Gagal login. Periksa koneksi dan kredensial.",
-                    ) }
+                    val msg = when {
+                        error is kotlinx.coroutines.TimeoutCancellationException -> "Koneksi timeout. Server tidak merespon."
+                        error.message?.contains("Unable to resolve host") == true -> "Tidak dapat terhubung ke server."
+                        error.message?.contains("Connection refused") == true -> "Server sedang sibuk. Coba lagi."
+                        else -> error.message ?: "Gagal login."
+                    }
+                    appLogger.warning(AppLogCategory.AUTH, "Login", "login_failed", msg)
+                    _uiState.update { it.copy(isLoading = false, error = msg) }
                 }
         }
     }
@@ -94,65 +119,34 @@ class LoginViewModel @Inject constructor(
         _uiState.update { it.copy(requirePasswordChange = false, isLoggedIn = true) }
     }
 
-    private suspend fun saveSessionAndRegisterDevice(response: LoginResponse) {
-        val localDeviceUuid = UUID.randomUUID().toString()
+    private fun registerDeviceInBackground(response: LoginResponse) {
+        viewModelScope.launch {
+            try {
+                val session = sessionManager.activeSession.first()
+                val deviceUuid = session?.deviceUuid ?: UUID.randomUUID().toString()
+                
+                deviceRepository.registerDevice(
+                    token = response.accessToken,
+                    deviceName = "${Build.MANUFACTURER} ${Build.MODEL}",
+                    devicePlatform = "android",
+                    deviceUuid = deviceUuid
+                ).onSuccess { registerResponse ->
+                    val serverDeviceUuid = registerResponse.device.uuid
+                    if (serverDeviceUuid != deviceUuid) {
+                        sessionManager.updateDeviceUuid(serverDeviceUuid)
+                    }
+                    appLogger.info(AppLogCategory.AUTH, "Login", "device_registered",
+                        "Device registered", "deviceUuid=$serverDeviceUuid")
+                }.onFailure { error ->
+                    appLogger.warning(AppLogCategory.AUTH, "Login", "device_register_failed",
+                        error.message ?: "Device registration failed")
+                }
 
-        // Save session with local device UUID first
-        sessionManager.saveSession(
-            userId = response.user.id,
-            userName = response.user.name,
-            userEmail = response.user.email,
-            userUuid = response.user.uuid,
-            roles = response.user.roles,
-            accessToken = response.accessToken,
-            deviceUuid = localDeviceUuid
-        )
-
-        // Insert current user into local Room database for FK integrity
-        val userEntity = UserEntity(
-            id = response.user.id,
-            name = response.user.name,
-            email = response.user.email,
-            uuid = response.user.uuid,
-        )
-        userDao.insertUser(userEntity)
-
-        // Register device with backend
-        deviceRepository.registerDevice(
-            token = response.accessToken,
-            deviceName = "${Build.MANUFACTURER} ${Build.MODEL}",
-            devicePlatform = "android",
-            deviceUuid = localDeviceUuid
-        ).onSuccess { registerResponse ->
-            // Use the server-assigned UUID if different
-            val serverDeviceUuid = registerResponse.device.uuid
-            if (serverDeviceUuid != localDeviceUuid) {
-                sessionManager.updateDeviceUuid(serverDeviceUuid)
-            }
-            appLogger.info(
-                category = AppLogCategory.AUTH,
-                screen = "Login",
-                action = "device_registered",
-                message = "Device registered with backend",
-                details = "deviceUuid=$serverDeviceUuid"
-            )
-        }.onFailure { error ->
-            // Non-fatal: session already saved with local UUID
-            appLogger.warning(
-                category = AppLogCategory.AUTH,
-                screen = "Login",
-                action = "device_register_failed",
-                message = error.message ?: "Device registration failed"
-            )
+                val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>().build()
+                WorkManager.getInstance(application).enqueueUniqueWork(
+                    "fundsmanager_sync_now", ExistingWorkPolicy.REPLACE, syncRequest
+                )
+            } catch (_: Exception) { }
         }
-
-        // Trigger immediate one-time sync after login
-        val syncRequest = OneTimeWorkRequestBuilder<SyncWorker>()
-            .build()
-        WorkManager.getInstance(application).enqueueUniqueWork(
-            "fundsmanager_sync_now",
-            ExistingWorkPolicy.REPLACE,
-            syncRequest
-        )
     }
 }
