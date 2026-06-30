@@ -15,8 +15,8 @@ android {
         applicationId = "com.example.fundsmanager"
         minSdk = 26
         targetSdk = 36
-        versionCode = 19
-        versionName = "2.0.0-b19"
+        versionCode = 20
+        versionName = "2.0.0-b20"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
