@@ -13,3 +13,7 @@ defaults:
       type: blog
     values:
       layout: default
+
+markdown: kramdown
+kramdown:
+  parse_block_html: true
