@@ -6,17 +6,19 @@
 </div>
 
 <form method="POST" action="{{ route('web.budget.store') }}" class="space-y-4"
-      x-data="{
+      x-data="budgetForm()">
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('budgetForm', () => ({
         items: [],
         pendingTemplateId: null,
         jobType: 'INSTALASI',
-
-        allTemplates: {!! json_encode($templates->map(fn($t) => [
+        allTemplates: <?= json_encode($templates->map(fn($t) => [
             'id' => $t->id,
             'name' => $t->category_name,
             'pagu_type' => $t->pagu_type ?? 'FIXED_PAGU',
             'pagu_amount' => $t->pagu_amount,
-        ])) !!},
+        ])) ?>,
 
         filteredTemplatesBySearch(q) {
             q = (q || '').toLowerCase();
@@ -35,8 +37,9 @@
             let n = parseInt(String(val).replace(/[^0-9]/g,''));
             return n ? n.toLocaleString('id-ID') : '0';
         }
-    }"
->
+    })
+})
+</script>
     @csrf
     <div class="bg-white rounded-xl border border-gray-200 p-4 md:p-5 shadow-sm">
         <h3 class="text-sm font-semibold text-gray-700 mb-3">Data Task</h3>
